@@ -180,3 +180,121 @@ catch块接收参数x。当我们传递参数时，这与变量的x不同。这�
 之后，我们将这个块级作用域的变量设置为1，并设置变量y的值。 现在，我们打印块级作用域的变量x，它等于1。
 
 在catch块之外，x仍然是undefined，而y是2。 当我们想在catch块之外的console.log(x)时，它返回undefined，而y返回2。
+
+## 10. 冒泡排序算法和数组去重
+
+**冒泡排序**
+
+```js
+function bubbleSort (arr) {
+  for (let i = 0; i < arr.length; i++) {
+    let flag = true;
+    for (let j = 0; j < arr.length - i - 1; j++) {
+      if (arr[j] > arr[j + 1]) {
+        flag = false;
+        let temp = arr[j];
+        arr[j] = arr[j + 1];
+        arr[j + 1] = temp;
+      }
+    }
+    if (flag) break;
+  }
+  return arr;
+}
+```
+
+> 冒泡排序总会执行(N-1)+(N-2)+(N-3)+..+2+1趟，但如果运行到当中某一趟时排序已经完成，或者输入的是一个有序数组，那么后边的比较就都是多余的，为了避免这种情况，我们增加一个flag，判断排序是否在中途就已经完成（也就是判断有无发生元素交换）
+
+**数组去重**
+
+1. Array.from(new Set(arr))
+
+```js
+var arr = [1,1,2,5,6,3,5,5,6,8,9,8];
+console.log(Array.from(new Set(arr)))
+// console.log([...new Set(arr)])
+```
+
+2. [...new Set(arr)]
+
+3. for循环嵌套，利用splice去重
+
+```js
+function unique (origin) {
+  let arr = [].concat(origin);
+  for (let i = 0; i < arr.length; i++) {
+    for (let j = i + 1; j < arr.length; j++) {
+      if (arr[i] == arr[j]) {
+        arr.splice(j, 1);
+        j--;
+      }
+    }
+  }
+  return arr;
+}
+var arr = [1,1,2,5,6,3,5,5,6,8,9,8];
+console.log(unique(arr))
+```
+
+4. 新建数组，利用indexOf或者includes去重
+
+```js
+function unique (arr) {
+  let res = []
+  for (let i = 0; i < arr.length; i++) {
+    if (!res.includes(arr[i])) {
+      res.push(arr[i])
+    }
+  }
+  return res;
+}
+var arr = [1,1,2,5,6,3,5,5,6,8,9,8];
+console.log(unique(arr))
+```
+
+5. 先用sort排序，然后用一个指针从第0位开始，配合while循环去重
+
+```js
+function unique (arr) {
+  arr = arr.sort(); // 排序之后的数组
+  let pointer = 0;
+  while (arr[pointer]) {
+    if (arr[pointer] != arr[pointer + 1]) { // 若这一项和下一项不相等则指针往下移
+      pointer++;
+    } else { // 否则删除下一项
+      arr.splice(pointer + 1, 1);
+    }
+  }
+  return arr;
+}
+var arr = [1,1,2,5,6,3,5,5,6,8,9,8];
+console.log(unique(arr))
+```
+
+## 11. 手写new
+
+```js
+function myNew (fn, ...args) {
+  let instance = Object.create(fn.prototype);
+  let result = fn.call(instance, ...args)
+  return typeof result === 'object' ? result : instance;
+}
+```
+
+## 12. 手写instanceof
+
+instanceof它主要是用于检测某个构造函数的原型对象在不在某个对象的原型链上。
+
+```js
+function myInstanceof (left, right) {
+  let proto = Object.getPrototypeOf(left);
+  while (true) {
+    if (proto === null) return false;
+    if (proto === right.prototype) return true;
+    proto = Object.getPrototypeOf(proto)
+  }
+}
+```
+
+## 13. 写一个防抖函数
+
