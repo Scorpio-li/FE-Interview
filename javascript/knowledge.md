@@ -2,7 +2,7 @@
  * @Author: Li Zhiliang
  * @Date: 2020-11-18 11:03:22
  * @LastEditors: Li Zhiliang
- * @LastEditTime: 2020-11-25 17:00:41
+ * @LastEditTime: 2020-11-27 14:21:04
  * @FilePath: /FE-Interview.git/javascript/knowledge.md
 -->
 # Knowledge
@@ -269,6 +269,35 @@ setTimeout(() => {
 
 ## 14. 描述下原型链
 
+### 关于原型
+
+1. 所有引用类型都有一个__proto__(隐式原型)属性，属性值是一个普通的对象
+
+2. 所有函数都有一个prototype(原型)属性，属性值是一个普通的对象
+
+3. 所有引用类型的__proto__属性指向它构造函数的prototype
+
+```js
+function Person(name){this.name = name}
+let p1 = new Person("小白");
+console.dir(p1)
+
+console.log(p1.__proto__ == Person.prototype)//true
+console.log(Person.prototype.constructor == Person)//true
+```
+
+![image](../static/img/javascript/prototype-1.png)
+
+### 关于原型链：
+
+当访问一个对象的某个属性时，会先在这个对象本身属性上查找，如果没有找到，则会去它的__proto__隐式原型上查找，即它的构造函数的prototype，如果还没有找到就会再在构造函数的prototype的__proto__中查找，这样一层一层向上查找就会形成一个链式结构，我们称为原型链
+
+**看Person函数的原型链:**
+
+![image](../static/img/javascript/prototype-2.png)
+
+> 由图所知实例person会通过__proto__这个属性找到Person.prototype,再由Person.prototype.__proto__往上寻找，一直到null为止,从而形成了一条明显的长链.
+
 ## 15. typeof和instanceof的区别
 
 - typeof表示是对某个变量类型的检测，基本数据类型除了null都能正常的显示为对应的类型，引用类型除了函数会显示为'function'，其它都显示为object。
@@ -311,4 +340,158 @@ Vue2.x中的虚拟DOM主要是借鉴了snabbdom.js，Vue3中借鉴inferno.js算�
 
 关于第一个差异，是因为CommonJS 加载的是一个对象（即module.exports属性），该对象只有在脚本运行完才会生成。而 ES6 模块不是对象，它的对外接口只是一种静态定义，在代码静态解析阶段就会生成。
 
-## 21.
+## 21. 关于setTimeout的一些冷知识
+
+- 由于消息队列的机制，不一定能按照自己设置的时间执行
+
+- settimeout嵌套settimeout时，系统会设置最短时间间隔为4ms
+
+- 未激活的页面，settimeout最小时间间隔为1000ms
+
+- 延时执行时间最大值为2147483647(32bit)，溢出这个值会导致定时器立即执行
+
+```js
+setTimeout(()=> {
+    console.log('这里会立即执行')
+} ,2147483648)
+```
+
+## 22. 
+
+## 23. 类数组变成数组
+
+类数组是具有length属性，但不具有数组原型上的方法。 比如说arguments，DOM操作返回的结果就是类数组。那么如何将类数组变成数组呢
+
+- Array.from(document.querySelectorAll('div'))
+
+- Array.prototype.slice.call(document.querySelectorAll('div')) 
+
+- [...document.querySelectorAll('div')]
+
+## 24. 事件循环机制
+
+浏览器环境中
+
+- 宏任务： 包括整体代码script，setTimeout，setInterval 、 I/O 操作、UI 渲染 等
+
+- 微任务： Promise.then
+
+> 特别说明的是new Promise里面的内容是同步执行的，像new Promise(resolve(console.log('1')))同步执行，resolve之后.then进入微任务队列，具体的内容请往下继续看。
+
+__在浏览器环境中：__事件循环的顺序，决定js代码的执行顺序。进入整体代码(宏任务)后，开始第一次循环。接着执行所有的微任务。然后再次从宏任务开始，找到其中一个任务队列执行完毕，再执行所有的微任务。大概就是先执行同步代码，然后就将宏任务放进宏任务队列，宏任务队列中有微任务就将其放进微任务队列，当宏任务队列执行完就检查微任务队列，微任务队列为空了就开始下一轮宏任务的执行，往复循环。 **宏任务 -> 微任务 -> 宏任务 -> 微任务**一直循环。
+
+```js
+console.log(1);
+
+setTimeout(() => {
+  console.log(2);
+  new Promise((resolve) => {
+    console.log(3);
+    resolve();
+  }).then(() => {
+    console.log(4);
+  });
+});
+
+new Promise((resolve) => {
+  console.log(5);
+  resolve();
+}).then(() => {
+  console.log(6);
+});
+
+setTimeout(() => {
+  console.log(7);
+  new Promise((resolve) => {
+    console.log(8);
+    resolve();
+  }).then(() => {
+    console.log(9);
+  });
+});
+
+console.log(10)
+```
+
+**第一轮循环：从上往下看代码** —> 打印1（同步代码），第一个setTimeout进入宏任务队列等待执行，然后执行到第一个new Promise，里面的内容同步执行，直接打印5，然后resolve，.then里的代码放到微任务队列等待执行,遇到第二个setTimeout，放到宏任务队列。 最后打印10。
+
+script宏任务执行完后打印1 -> 5 -> 10 。然后看看队列中的情况
+
+宏任务队列|	微任务队列
+---|---
+setTimeout1	|then1
+setTimeout2	|
+
+我们发现微任务队列中存在一个微任务，然后去执行它。
+
+then1打印6，**所以第一轮循环结束后打印了1 -> 5 -> 10 -> 6**
+
+**第二轮循环**：执行宏任务队列里的setTimeout1，先执行里面的同步代码，打印2和3，.then进入微任务队列
+
+宏任务队列	| 微任务队列
+---|---
+setTimeout2	| then2
+
+然后去执行微任务队列中的任务，打印4，第二轮循环结束打印了2 -> 3 -> 4
+
+**第三轮循环**：执行宏任务队列里的setTimeout2，先执行里面的同步代码打印7和8，.then进入微任务队列
+
+宏任务队列|	微任务队列
+---|---
+ |then3
+
+然后去执行微任务队列中的任务，打印9，第三轮循环结束打印了7 -> 8 -> 9
+
+宏任务和微任务队列都为空便结束循环，最后打印的顺序是：
+
+**1 -> 5 -> 10 -> 6 -> 2 -> 3 -> 4 -> 7 -> 8 -> 9**
+
+上述结果在浏览器环境(谷歌浏览器86版本)和node v12.18.0环境中测试均一样
+
+最后说明一下：如果遇到async / await，可以将await理解成Promise.then。然后我们再对知识点进行一下巩固
+
+### 总结
+
+在浏览器环境中，分为宏任务和微任务
+
+主要宏任务有：script主代码、setTimeout、setInterval
+
+主要微任务有：Promise.then
+
+先执行**宏任务队列 -> 微任务队列 -> 循环**
+
+在node环境中，先执行**宏任务队列 -> process.nextTick队列 -> 微任务队列 -> setTimeout -> setImemediate**
+
+
+## 25. 闭包
+
+关于闭包，根据红宝书第3版的解释是：闭包是指有权访问另一个函数作用域中的变量的函数。
+
+- 函数执行会形成一个私有上下文，如果上下文中的某些内容（一般指的是堆内存地址）被上下文以外的些事物（例如：变量、事件绑定）所占用，则当前上下文不能被出栈释放（浏览器的垃圾回收机制GC所决定的） > => 闭包的机制：形成一个不被释放的上下文；
+
+- 保护：保护私有上下文中的私有变量和外界互不影响>
+
+- 保存：上下文不被释放，那么上下文中的私有变量和值都会保存起来，可以供其下级上下文使用
+
+- 弊端：如果大量使用闭包，会导致栈内存太大，页面渲染变慢，性能受到影响，所以真是项目中想要合理应用闭包；某些代码会导致栈溢出或者内存泄露，这些操作都是需要我们注意的.
+
+
+
+## 26. 
+## 24. 
+## 24. 
+## 24. 
+## 24. 
+## 24. 
+## 24. 
+## 24. 
+## 24. 
+## 24. 
+## 24. 
+## 24. 
+
+
+
+
+
+

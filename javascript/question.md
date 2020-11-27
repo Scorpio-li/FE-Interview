@@ -207,6 +207,12 @@ function bubbleSort (arr) {
 
 **数组去重**
 
+定义去重数据
+
+```js
+let arr = [1, 1, "1", "1", null, null, undefined, undefined, /a/, /a/, NaN, NaN, {}, {}, [], []]
+```
+
 1. Array.from(new Set(arr))
 
 ```js
@@ -215,7 +221,30 @@ console.log(Array.from(new Set(arr)))
 // console.log([...new Set(arr)])
 ```
 
-2. [...new Set(arr)]
+2. [...new Set(arr)]: 引用数据类型并没有能成功去重，只能去除基本数据类型
+
+```js
+// 使用 Set
+let res = [...new Set(arr)]
+console.log(res)
+```
+
+  - 同理：filter 和 reduce 两种方法也和上面的方法一样，不能去掉引用数据类型。
+
+  ```js
+  //使用filter
+  let res = arr.filter((item, index) => {
+    return arr.indexOf(item) === index
+  })
+  console.log(res)
+
+  //使用reduce
+  let res = arr.reduce((pre, cur) => {
+    return pre.includes(cur) ? pre : [...pre, cur]
+  }, [])
+  console.log(res)
+  ```
+
 
 3. for循环嵌套，利用splice去重
 
@@ -271,6 +300,21 @@ var arr = [1,1,2,5,6,3,5,5,6,8,9,8];
 console.log(unique(arr))
 ```
 
+6. hasOwnProperty: 利用对象的hasOwnProperty方法进行判断对象上是否含有该属性，如果含有则过滤掉，不含有则返回新数组中(可以去除引用类型)
+
+```js
+let obj = {}
+let res = arr.filter(item => {
+  if (obj.hasOwnProperty(typeof item + item)) {
+    return false
+  } else {
+    obj[typeof item + item] = true
+    return true
+  }
+})
+console.log(res)
+```
+
 ## 11. 手写new
 
 ```js
@@ -286,15 +330,107 @@ function myNew (fn, ...args) {
 instanceof它主要是用于检测某个构造函数的原型对象在不在某个对象的原型链上。
 
 ```js
-function myInstanceof (left, right) {
-  let proto = Object.getPrototypeOf(left);
-  while (true) {
-    if (proto === null) return false;
-    if (proto === right.prototype) return true;
-    proto = Object.getPrototypeOf(proto)
-  }
+function myInstanceof(left,right) {
+    if(typeof left !== 'object' || left === null) return false
+    //获取原型
+    let proto = Object.getPrototypeOf(left)
+    while(true){
+        //如果原型为null，则已经到了原型链顶端，判断结束
+        if(proto === null) return false
+        //左边的原型等于右边的原型，则返回结果
+        if(proto === right.prototype) return true
+        //否则就继续向上获取原型
+        proto = Object.getPrototypeOf(proto)
+    }
 }
 ```
 
 ## 13. 写一个防抖函数
 
+## 14. for循环setTimeout打印输出
+
+如果不采用立即执行函数或者let的形式就会直接打印出10个10，通过采取闭包或者let有了块级作用域之后就不会出现这样的问题
+
+- 立即执行函数
+
+```js
+for (var i = 0; i < 10; i++) {
+  (function (j) {
+    setTimeout(() => {
+      console.log(j)
+    }, 1000)
+  })(i)
+}
+```
+
+- 闭包：给定时器传入第三个参数, 定时器可以传多个参数给定时器函数，此处将外层的i传递给了定时器中回调函数作为参数使用。
+
+```js
+for(var i = 1;i <= 5; i++){
+  setTimeout(function timer(j){
+    console.log(j)
+  }, 0, i)
+}
+```
+
+- 用let给定块级作用域
+
+```js
+for (let i = 0; i < 10; i++) {
+  setTimeout(() => {
+    console.log(i)
+  }, 1000)
+}
+```
+
+## 15. bind相关
+
+```js
+let obj = { a: 1 }
+let obj2 = { a: 2 }
+let obj3 = { a: 3 }
+let obj4 = { a: 4 }
+
+function foo() {
+  console.log(this.a)
+}
+
+let boundFn = foo.bind(obj).bind(obj2).bind(obj3)
+boundFn.call(obj4)  //打印结果为1
+boundFn.apply(obj4) //打印结果为1
+boundFn()  //打印结果为1
+```
+
+- 由此我们可以看出bind是永久绑定，往后的操作都不会再更改其指向
+
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
+## 16. 
