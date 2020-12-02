@@ -85,3 +85,24 @@ http1和浏览器的问题，同一时间6个连接
 ## 项目难点以及怎么解决的
 
 ## 项目有哪些亮点？
+
+## 做移动端开发时，你是如何调试的？
+
+使用最多的就是charles和chrome://inspect/#devices进行调试，当然实际开发中还是使用chrome的开发这工具，真机的时候是使用charles代理或者chrome://inspect/#devices代理，ios的话使用的是safari真机调试，当然也使用过vconsole，weinre等进行调试
+
+## Hybrid如何通信的?
+
+1. API注入，原理其实就是 Native 获取 JavaScript环境上下文，并直接在上面挂载对象或者方法，使 js 可以直接调用，Android 与 IOS 分别拥有对应的挂载方式
+
+2. WebView 中的 prompt/console/alert 拦截，通常使用 prompt，因为这个方法在前端中使用频率低，比较不会出现冲突
+
+3. WebView URL Scheme 跳转拦截
+
+## 知道npm ci么，和npm install的区别是啥
+
+npm install读取package.json以创建依赖关系列表，并使用package-lock.json告知要安装这些依赖关系的版本。如果依赖项不在package-lock.json中，它将由npm install添加。
+
+npm ci(以持续集成命名)直接从package-lock.json安装依赖关系，并且仅使用package.json来验证没有不匹配的版本。如果缺少任何依赖项或版本不兼容，则将引发错误。
+
+速度上ci明显比install快，线上发布打包的时候使用ci是优于install的
+

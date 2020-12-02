@@ -356,7 +356,16 @@ setTimeout(()=> {
 } ,2147483648)
 ```
 
-## 22. 
+## 22. 实现图片懒加载的思路
+
+判断图片所在位置是否在可视区内，图片移到可视区内进行加载，提供三种判断方法
+
+- offsetTop < clientHeight + scrollTop
+
+- element.getBoundingClientRect().top < clientHeight
+
+- IntersectionObserver
+
 
 ## 23. 类数组变成数组
 
@@ -477,13 +486,53 @@ setTimeout2	| then2
 
 
 
-## 26. 
-## 24. 
-## 24. 
-## 24. 
-## 24. 
-## 24. 
-## 24. 
+## 26. 为什么说js是单线程，而不是多线程呢，说说你的理解
+
+JavaScript的单线程，与它的用途有关。作为浏览器脚本语言，JavaScript的主要用途是与用户互动，以及操作DOM。这决定了它只能是单线程，否则会带来很复杂的同步问题。比如，假定JavaScript同时有两个线程，一个线程在某个DOM节点上添加内容，另一个线程删除了这个节点，这时浏览器应该以哪个线程为准？
+
+## 27. 为什么typeof可以检测类型，有没有更好的方法
+
+typeof 一般被用于判断一个变量的类型，我们可以利用 typeof 来判断number, string, object, boolean, function, undefined, symbol 这七种类型，这种判断能帮助我们搞定一些问题，js在底层存储变量的时候会在变量的机器码的低位1-3位存储其类型信息(000：对象，010：浮点数，100：字符串，110：布尔，1：整数)，但是null所有机器码均为0，直接被当做了对象来看待。
+那么有没有更好的办法区分类型呢，一般使用Object.prototype.toString.call()，具体可以参考这篇文章：https://zhuanlan.zhihu.com/p/118793721
+
+## 28. 什么是事件委托？它有什么好处？
+
+事件委托是利用事件冒泡机制处理指定一个事件处理程序，来管理某一类型的所有事件 利用冒泡的原理，将事件加到父级身上，触发执行效果，这样只在内存中开辟一块空间，既节省资源又减少DOM操作，提高性能 动态绑定事件，列表新增元素不用进行重新绑定了
+
+## 29. 使用js如何改变url，并且页面不刷新？
+
+改变URL的目的是让js拿到不同的参数，进行不同的页面渲染，其实就是vue-router的原理
+
+最简单的就是改变hash，改变hash是并不会刷新页面的，也会改变URL，也能监听hashchange事件进行页面的渲染
+
+还有一种就是使用history.pushState()方法，该方法也可以改变url然后不刷新页面，但是该方法并不能够触发popstate事件，不过pushState使我们手动触发的，还能不知道url改变了么，其实这时候并不需要监听popstate我们就能够知道url改变拿到参数并渲染页面
+
+## 24. 使用css3动画代替js的动画有什么好处？
+
+css和js动画各有优劣
+
+1. 不占用JS主线程
+
+2. 可以利用硬件加速
+
+3. 浏览器可对动画做优化（元素不可见时不动画，减少对FPS的影响）
+
+## 24. js中自定义事件的使用与触发
+
+```js
+var event = new Event('build');
+
+// Listen for the event.
+elem.addEventListener('build', function (e) { ... }, false);
+
+// Dispatch the event.
+elem.dispatchEvent(event);
+```
+
+## 24. 为什么使用jsx开发，vue不是都用template么
+
+jsx的灵活性更高，用写js的思路来写html，更加的高效
+
 ## 24. 
 ## 24. 
 ## 24. 
