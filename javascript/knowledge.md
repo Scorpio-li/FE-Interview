@@ -507,7 +507,7 @@ typeof 一般被用于判断一个变量的类型，我们可以利用 typeof �
 
 还有一种就是使用history.pushState()方法，该方法也可以改变url然后不刷新页面，但是该方法并不能够触发popstate事件，不过pushState使我们手动触发的，还能不知道url改变了么，其实这时候并不需要监听popstate我们就能够知道url改变拿到参数并渲染页面
 
-## 24. 使用css3动画代替js的动画有什么好处？
+## 30. 使用css3动画代替js的动画有什么好处？
 
 css和js动画各有优劣
 
@@ -517,7 +517,7 @@ css和js动画各有优劣
 
 3. 浏览器可对动画做优化（元素不可见时不动画，减少对FPS的影响）
 
-## 24. js中自定义事件的使用与触发
+## 31. js中自定义事件的使用与触发
 
 ```js
 var event = new Event('build');
@@ -529,12 +529,176 @@ elem.addEventListener('build', function (e) { ... }, false);
 elem.dispatchEvent(event);
 ```
 
-## 24. 为什么使用jsx开发，vue不是都用template么
+## 32. 为什么使用jsx开发，vue不是都用template么
 
 jsx的灵活性更高，用写js的思路来写html，更加的高效
 
-## 24. 
-## 24. 
+## 33. 如何获取 html 元素实际的样式值？
+
+实际的样式值 可以理解为 浏览器的计算样式
+
+style 对象中包含支持 style 属性的元素为这个属性设置的样式信息，但不包含从其他样式表层叠继承的同样影响该元素的样式信息。
+
+DOM2 Style 在 document.defaultView 上增加了 getComputedStyle()方法。这个方法接收两个参数：要取得计算样式的元素和伪元素字符串（如":after"）。如果不需要查询伪元素，则第二个参数可以传 null。getComputedStyle()方法返回一个 CSSStyleDeclaration对象（与 style 属性的类型一样），包含元素的计算样式。
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Computed Styles Example</title>
+    <style type="text/css">
+      #myDiv {
+        background-color: blue;
+        width: 100px;
+        height: 200px;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="myDiv"
+      style="background-color: red; border: 1px solid black"
+    ></div>
+  </body>
+  <script>
+    let myDiv = document.getElementById("myDiv");
+    let computedStyle = document.defaultView.getComputedStyle(myDiv, null);
+
+    console.log(computedStyle.backgroundColor); // "red"
+    console.log(computedStyle.width); // "100px"
+    console.log(computedStyle.height); // "200px"
+    console.log(computedStyle.border); // "1px solid black"（在某些浏览器中）
+
+    /* 兼容写法 */
+    function getStyleByAttr(obj, name) {
+       return window.getComputedStyle
+         ? window.getComputedStyle(obj, null)[name]
+         : obj.currentStyle[name];
+     }
+     let node = document.getElementById("myDiv");
+     console.log(getStyleByAttr(node, "backgroundColor"));
+     console.log(getStyleByAttr(node, "width"));
+     console.log(getStyleByAttr(node, "height"));
+     console.log(getStyleByAttr(node, "border
+  </script>
+</html>
+```
+
+## 34. 深拷贝如何解决循环引用？
+
+### 循环引用问题
+
+```js
+function deepCopy(obj){
+    const res = Array.isArray(obj) ? [] : {};
+    for(let key in obj){
+        if(typeof obj[key] === 'object'){
+            res[key] = deepCopy(obj[key]);
+        }else{
+            res[key] = obj[key];
+        }
+    }
+    return res
+}
+var obj = {
+    a:1,
+    b:2,
+    c:[1,2,3],
+    d:{aa:1,bb:2},
+};
+obj.e = obj;
+console.log('obj',obj); // 不会报错
+
+const objCopy = deepCopy(obj);
+console.log(objCopy); //Uncaught RangeError: Maximum call stack size exceeded
+```
+
+从例子可以看到，当存在循环引用的时候，deepCopy会报错，栈溢出。
+
+- obj对象存在循环引用时，打印它时是不会栈溢出
+
+- 深拷贝obj时，才会导致栈溢出
+
+### 循环应用问题解决
+
+大家都知道，对象的key是不能是对象的。
+
+```js
+{{a:1}:2}
+// Uncaught SyntaxError: Unexpected token ':'
+```
+
+#### 参考解决方式一：使用weekmap:
+
+解决循环引用问题，我们可以额外开辟一个存储空间，来存储当前对象和拷贝对象的对应关系
+
+这个存储空间，需要可以存储key-value形式的数据，且key可以是一个引用类型，
+
+我们可以选择 WeakMap  这种数据结构：
+
+- 检查 WeakMap  中有无克隆过的对象
+
+- 有，直接返回
+
+- 没有，将当前对象作为key，克隆对象作为value进行存储
+
+- 继续克隆
+
+```js
+function isObject(obj) {
+    return (typeof obj === 'object' || typeof obj === 'function') && obj !== null
+}
+function cloneDeep(source, hash = new WeakMap()) {
+  if (!isObject(source)) return source;
+  if (hash.has(source)) return hash.get(source); // 新增代码，查哈希表
+
+  var target = Array.isArray(source) ? [] : {};
+  hash.set(source, target); // 新增代码，哈希表设值
+
+  for (var key in source) {
+    if (Object.prototype.hasOwnProperty.call(source, key)) {
+      if (isObject(source[key])) {
+        target[key] = cloneDeep(source[key], hash); // 新增代码，传入哈希表
+      } else {
+        target[key] = source[key];
+      }
+    }
+  }
+  return target;
+}
+```
+
+#### 参考解决方式二：
+
+可以用 Set，发现相同的对象直接赋值，也可用 Map
+
+```js
+const o = { a: 1, b: 2 };
+o.c = o;
+
+function isPrimitive(val) {
+    return Object(val) !== val;
+}
+const set = new Set();
+function clone(obj) {
+    const copied = {};
+    for (const [key, value] of Object.entries(obj)) {
+        if (isPrimitive(value)) {
+            copied[key] = value;
+        } else {
+            if (set.has(value)) {
+                copied[key] = { ...value };
+            } else {
+                set.add(value);
+                copied[key] = clone(value);
+            }
+        }
+    }
+    return copied;
+}
+```
+
+
 ## 24. 
 ## 24. 
 ## 24. 
