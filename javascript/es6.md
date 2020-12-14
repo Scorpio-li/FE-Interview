@@ -7,7 +7,27 @@
 -->
 # ES6
 
-## 1. 写一个 es6 的继承过程
+## 1. Es6常见新特性
+
+- ES6类 Class
+
+- for...of 和 for...in
+
+- 对象的解构
+
+- rest操作符 / Spread操作符
+
+- 模板字符串
+
+- const let
+
+- promise
+
+- async函数
+
+- Module
+
+## 2. 写一个 es6 的继承过程
 
 ```js
 // 这个是要实现的方法
@@ -28,3 +48,4 @@ class Man extends Human {
 	}
 }
 ```
+

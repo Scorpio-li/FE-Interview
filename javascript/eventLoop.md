@@ -2,7 +2,7 @@
  * @Author: Li Zhiliang
  * @Date: 2020-11-20 14:49:52
  * @LastEditors: Li Zhiliang
- * @LastEditTime: 2020-11-23 16:33:48
+ * @LastEditTime: 2020-12-14 22:22:38
  * @FilePath: /FE-Interview.git/javascript/eventLoop.md
 -->
 # 事件循环（EventLoop）
@@ -73,7 +73,11 @@ cccc
 
 - 宏任务（macroTask或简称Task）：普通的任务，正常执行
 
-- 微任务（microTask）：SVIP年费白金会员任务，优先于宏任务执行（但依然是非抢断的）
+  - 常见的宏任务:script(整体代码), XHR回调,setTimeout, setInterval, setImmediate（node独有）, I/O.
+
+- 微任务（microTask）：SVIP年费白金会员任务，优先于宏任务执行（但依然是非抢断的）, 微任务是宏任务的组成部分,微任务与宏任务是包含关系,并非前后并列.如果要谈微任务,需要指出它属于哪个宏任务才有意义.
+
+  - process.nextTick(nodejs端),Promise.then的回调等.
 
 ![image](../static/img/javascript/eventloop-3.png)
 
@@ -259,6 +263,57 @@ console.log('bbb');
 - 第7步、优先执行微任务，也就是444，此时所有微任务都完成了
 
 - 第8步、执行剩下的普通任务队列，这时t1和t2才会出来
+
+### 3. dom操作属于宏任务还是微任务
+
+```js
+ console.log(1);
+ document.getElementById("div").style.color = "red";
+ console.log(2);
+```
+
+在实践中发现,当上面代码执行到第三行时,控制台输出了1并且页面已经完成了重绘,div的颜色变成了红色.
+
+dom操作它既不是宏任务也不是微任务,它应该归于同步执行的范畴.
+
+### 4. requestAnimationFrame属于宏任务还是微任务
+
+```js
+setTimeout(() => {
+  console.log("11111")
+}, 0)
+requestAnimationFrame(() => {
+   console.log("22222")
+})
+new Promise(resolve => {
+  console.log('promise');
+  resolve();
+})
+.then(() => {console.log('then')})
+```
+
+执行结果: promise -- then -- 22222 -- 11111
+
+很多人会把 requestAnimationFrame 归结到宏任务中,因为发现它会在微任务队列完成后执行.
+
+但实际上 requestAnimationFrame 它既不能算宏任务,也并非是微任务.它的执行时机是在当前宏任务范围内,执行完同步代码和微任务队列后再执行.它仍然属于宏任务范围内,但是是在微任务队列执行完毕后才执行.
+
+### Promise的运行机制
+
+**包裹函数是同步代码**
+
+```js
+ new Promise((resolve)=>{
+    console.log(1);
+	resolve();
+  }).then(()=>{
+    console.log(2);
+ })
+```
+
+new Promise里面的包裹的函数,也就是输出1的那段代码是同步执行的.而then包裹的函数才会被加载到微任务队列中等待执行.
+
+
 
 ## 总结：
 
