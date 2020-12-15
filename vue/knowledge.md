@@ -2,7 +2,7 @@
  * @Author: Li Zhiliang
  * @Date: 2020-11-18 11:14:03
  * @LastEditors: Li Zhiliang
- * @LastEditTime: 2020-11-25 16:06:01
+ * @LastEditTime: 2020-12-15 22:57:00
  * @FilePath: /FE-Interview.git/vue/knowledge.md
 -->
 # Knowledge
@@ -433,7 +433,136 @@ function initData(vm: Component) {
   - defineReactive 方法就是 Vue 在初始化对象时，给对象属性采用 Object.defineProperty 动态添加 getter 和 setter 的功能所调用的方法
 
 
-##
+## 7. vue的data为什么是一个方法
+
+因为组件是用来复用的，且 JS 里对象是引用关系，如果组件中 data 是一个对象，那么这样作用域没有隔离，子组件中的 data 属性值会相互影响，如果组件中 data 选项是一个函数，那么每个实例可以维护一份被返回对象的独立的拷贝，组件实例之间的 data 属性值不会互相影响；而 new Vue 的实例，是不会被复用的，因此不存在引用对象的问题
+
+一个组件被复用多次的话，也就会创建多个实例。本质上，这些实例用的都是同一个构造函数。如果data是对象的话，对象属于引用类型，会影响到所有的实例。所以为了保证组件不同的实例之间data不冲突，data必须是一个函数
+
+## 8. watch 监听实现
+
+vm 调用 $watch 后，首先调用 observe 函数 创建 Observer 实例观察数据，Observer 又创建 Dep , Dep 用来维护订阅者。然后创建 Watcher 实例提供 update函数。一旦数据变动，就层层执行回调函数
+
+## 9. vue-router的hash跟history模式
+
+### 9.1 hash模式
+
+hash模式， 原本用来结合锚点控制页面视窗的位置，具有以下特点：
+
+- 在hash模式下，所有的页面跳转都是客户端进行操作，因此对于页面拦截更加灵活；但每次url的改变不属于一次http请求，所以不利于SEO优化
+
+- hash 模式是一种把前端路由的路径用井号 # 拼接在真实 URL 后面的模式。当井号 # 后面的路径发生变化时，浏览器并不会重新发起请求，而是会触发 hashchange 事件。
+
+- 可以改变URL，但不会触发页面重新加载（hash的改变会记录在window.hisotry中）因此并不算是一次http请求，所以这种模式不利于SEO优化
+
+- 只能修改#后面的部分，因此只能跳转与当前URL同文档的URL
+
+- 只能通过字符串改变URL
+
+- 通过window.onhashchange监听hash的改变，借此实现无刷新跳转的功能
+
+### 9.2 history模式
+
+history模式， 根据 Mozilla Develop Network 的介绍，调用 history.pushState() 相比于直接修改 hash，存在以下优势
+
+- history API 是 H5 提供的新特性，允许开发者直接更改前端路由，即更新浏览器 URL 地址而不重新发起请求
+
+- 新的URL可以是与当前URL同源的任意 URL，也可以与当前URL一样，但是这样会把重复的一次操作记录到栈中
+
+- 通过参数stateObject可以添加任意类型的数据到记录中
+
+- 可额外设置title属性供后续使用
+
+- 通过pushState、replaceState实现无刷新跳转的功能
+
+- 兼容性不如 hash，且需要服务端支持，否则一刷新页面就404了
+
+- 在history模式下，借助history.pushState实现页面的无刷新跳转；这种方式URL的改变属于http请求，因此会重新请求服务器，这也使得我们必须在服务端配置好地址，否则服务端会返回404，为确保不出问题，最好在项目中配置404页面
+
+## 10. vue3 Proxy跟vue2 defineProperty区别
+
+### defineProperty缺点
+
+- 无法检测对象属性的添加或移除，为此我们需要使用 Vue.set 和 Vue.delete 来保证响应系统的运行符合预期
+
+- 无法监控到数组下标及数组长度的变化，当直接通过数组的下标给数组设置值或者改变数组长度时，不能实时响应
+
+- 性能问题，当data中数据比较多且层级很深的时候，因为要遍历data中所有的数据并给其设置成响应式的，会导致性能下降
+
+### 对比区别
+
+- Object.defineProperty只能劫持对象的属性，对新增属性需要手动进行 Observe，而 Proxy 是直接代理对象
+
+- 为什么 Proxy 可以解决以上的痛点呢？ 本质的原因在于 Proxy 是一个内置了拦截器的对象，所有的外部访问都得先经过这一层拦截。不管是先前就定义好的，还是新添加属性，访问时都会被拦截（proxy具体学习请看阮一峰老师的ES6教程 Proxy）
+
+
+## 11. computed和watch区别
+
+- computed： 是计算属性，依赖其它属性值，并且 computed 的值有缓存，只有它依赖的属性值发生改变，下一次获取 computed 的值时才会重新计算 computed的值
+
+- watch： 更多的是「观察」的作用，类似于某些数据的监听回调 ，每当监听的数据变化时都会执行回调进行后续操作
+
+- 相同： computed和watch都起到监听/依赖一个数据，并进行处理的作用
+
+- 不同：它们其实都是vue对监听器的实现，只不过computed主要用于对同步数据的处理，watch则主要用于观测某个值的变化去完成一段开销较大的复杂业务逻辑。能用computed的时候优先用computed，避免了多个数据影响其中某个数据时多次调用watch的尴尬情况
+
+## 12. 在哪个生命周期内调用异步请求
+
+可以在钩子函数 created、beforeMount、mounted 中进行调用，因为在这三个钩子函数中，data 已经创建，可以将服务端端返回的数据进行赋值。但是本人推荐在 created 钩子函数中调用异步请求，因为在 created 钩子函数中调用异步请求有以下优点
+
+- 能更快获取到服务端数据，减少页面 loading 时间
+
+- ssr 不支持 beforeMount 、mounted 钩子函数，所以放在 created 中有助于一致性
+
+## 13. 虚拟DOM
+
+### 虚拟DOM有什么好处？
+
+假设一次操作中有10次更新DOM的动作，虚拟DOM不会立即操作DOM，而是将这10次更新的diff内容保存到本地一个JS对象中，最终将这个JS对象一次性attch到DOM树上，再进行后续操作，避免大量无谓的计算量。所以，用JS对象模拟DOM节点的好处是，页面的更新可以先全部反映在虚拟DOM上，操作内存中的JS对象的速度显然要更快，等更新完成后，再将最终的JS对象映射成真实的DOM，交由浏览器去绘制
+
+### 通过DIFF算法对比操作JS对象实现差量更新
+
+- 没有旧的节点，则创建新的节点，并插入父节点。
+
+- 如果没有新的节点，则摧毁旧的节点。
+
+- 如果节点发生了变化，则用replaceChild改变节点信息
+
+- 如果节点没有变化，则对比该节点的子节点进行判断，使用递归调用
+
+### 虚拟DOM实际渲染规则
+
+Vue和React通用流程：vue template/react jsx -> render函数 -> 生成VNode -> 当有变化时，新老VNode diff -> diff算法对比，并真正去更新真实DOM
+
+## 14. keep-alive
+
+keep-alive是Vue.js的一个内置组件。<keep-alive> 包裹动态组件时，会缓存不活动的组件实例，而不是销毁它们。它自身不会渲染一个 DOM 元素，也不会出现在父组件链中。 当组件在 <keep-alive> 内被切换，它的 activated 和 deactivated 这两个生命周期钩子函数将会被对应执行。它提供了include与exclude两个属性，允许组件有条件地进行缓存
+
+## 15. vuex
+
+### 15.1 vuex核心：
+
+- state：存储store的各种状态
+
+- mutation： 改变store的状态只能通过mutation方法
+
+- action： 异步操作方法
+
+- module： 模块化
+
+- getter： 相当于计算属性，过滤出来一些值
+
+### 15.2 vuex使用
+
+每一个 Vuex 应用的核心就是 store（仓库）。“store”基本上就是一个容器，它包含着你的应用中大部分的状态 (state)。Vuex 和单纯的全局对象有以下两点不同：
+
+
+Vuex 的状态存储是响应式的。当 Vue 组件从 store 中读取状态的时候，若 store 中的状态发生变化，那么相应的组件也会相应地得到高效更新。
+
+
+你不能直接改变 store 中的状态。改变 store 中的状态的唯一途径就是显式地提交 (commit) mutation。这样使得我们可以方便地跟踪每一个状态的变化，从而让我们能够实现一些工具帮助我们更好地了解我们的应用
+
+
 ##
 ##
 ##
