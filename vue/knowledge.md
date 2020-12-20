@@ -2,7 +2,7 @@
  * @Author: Li Zhiliang
  * @Date: 2020-11-18 11:14:03
  * @LastEditors: Li Zhiliang
- * @LastEditTime: 2020-12-15 22:57:00
+ * @LastEditTime: 2020-12-20 20:12:01
  * @FilePath: /FE-Interview.git/vue/knowledge.md
 -->
 # Knowledge
@@ -563,7 +563,36 @@ Vuex 的状态存储是响应式的。当 Vue 组件从 store 中读取状态的
 你不能直接改变 store 中的状态。改变 store 中的状态的唯一途径就是显式地提交 (commit) mutation。这样使得我们可以方便地跟踪每一个状态的变化，从而让我们能够实现一些工具帮助我们更好地了解我们的应用
 
 
-##
+## 16. this.$store.dispatch() 与 this.$store.commit()方法的区别
+
+只是存取方式的不同,两个方法都是传值给vuex的mutation改变state
+
+- this.$store.dispatch() ：含有异步操作，例如向后台提交数据，写法：this.$store.dispatch(‘action方法名’,值)
+
+- this.$store.commit()：同步操作，，写法：this.$store.commit(‘mutations方法名’,值)
+
+### commit: 同步操作
+
+```js
+// 存储
+this.$store.commit('changeValue',name)
+
+// 取值
+this.$store.state.changeValue
+```
+
+### dispatch: 异步操作
+
+```js
+// 存储
+this.$store.dispatch('getlists',name)
+
+// 取值
+this.$store.getters.getlists
+```
+
+
+
 ##
 ##
 ##

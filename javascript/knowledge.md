@@ -2,7 +2,7 @@
  * @Author: Li Zhiliang
  * @Date: 2020-11-18 11:03:22
  * @LastEditors: Li Zhiliang
- * @LastEditTime: 2020-12-14 17:56:41
+ * @LastEditTime: 2020-12-16 17:23:44
  * @FilePath: /FE-Interview.git/javascript/knowledge.md
 -->
 # Knowledge
@@ -786,8 +786,70 @@ if (true) {
 
 
 
-##
-##
+## 39. continue、break以及return的区别
+
+- continue：跳过所在循环的本次循环，本次循环后面的语句不执行了，接着执行下一次循环
+
+- break：结束所在循环，继续剩下的函数
+
+- return：结束所在函数（无论是在多少层的嵌套下）
+
+```js
+ifElse()
+function ifElse() {
+  console.log("ifElse")
+  const arr = ['第一个', '第二个', '第三个']
+  const arr2 = ['〇', '一', '二']
+  for (let i = 0; i < arr.length; i ++) {
+    console.log(arr[i])
+    for (let j = 0; j < arr2.length; j ++) {
+      console.log(arr2[j])
+    }
+  }
+  console.log("循环结束")
+}
+```
+
+> 关于return，有一个小点需要注意的是，return结束的是所在的函数，如果是函数套函数，结束的仅仅是最里层的函数（也可以理解为就近结束吧），比如：
+
+```js
+test()
+function test() {
+  console.log("开始")
+  let a = function () {
+    console.log("函数")
+    return
+    console.log("函数结束")
+  }
+  a()
+  console.log("使用完函数")
+  return
+  console.log("结束")
+}
+```
+
+像a函数中的return，结束的仅仅是a函数，并不会结束test，而a()之后的return结束的就是test了
+
+## 40. input输入框如何删除历史记录
+
+```html
+<input id="vhcl_no"  type="text"  autocomplete="off">
+```
+
+input的属性autocomplete默认为on其含义代表让浏览器自动记录之前输入的值
+
+如果想要关闭记录可以在input中加入autocomplete="off"
+
+```js
+//js给input框赋属性
+ 
+document.getElementById("vhcl_no").autocomplete = "off";
+ 
+//jquery给input框赋属性
+ 
+$("#vhcl_no").attr('autocomplete', 'off');
+```
+
 ##
 ##
 ##
