@@ -2,10 +2,10 @@
  * @Author: Li Zhiliang
  * @Date: 2020-11-27 10:57:30
  * @LastEditors: Li Zhiliang
- * @LastEditTime: 2020-11-27 14:51:13
+ * @LastEditTime: 2020-12-26 10:42:43
  * @FilePath: /FE-Interview.git/javascript/handleWrittenCode.md
 -->
-# 手写逻辑代码搜集
+# 手写逻辑代码搜集（待验证）
 
 ## 1. 实现继承
 
@@ -58,6 +58,38 @@ let p = new Parent()
 console.log(p.name, p.hairColor) //大人 黑色
 ```
 
+> 寄生组合继承（ES5继承的最佳方式）
+
+所谓寄生组合式继承，即通过借用构造函数来继承属性，通过原型链的形式来继承方法。
+
+只调用了一次父类构造函数，效率更高。避免在子类.prototype上面创建不必要的、多余的属性，与其同时，原型链还能保持不变。
+
+```js
+function Parent(name) {
+  this.name = name;
+  this.colors = ['red', 'blue', 'green'];
+}
+Parent.prototype.getName = function () {
+  return this.name;
+}
+
+function Child(name, age) {
+  Parent.call(this, name); // 调用父类的构造函数，将父类构造函数内的this指向子类的实例
+  this.age = age;
+}
+
+//寄生组合式继承
+Child.prototype = Object.create(Parent.prototype);
+Child.prototype.constructor = Child;
+
+Child.prototype.getAge = function () {
+    return this.age;
+}
+
+let girl = new Child('Lisa', 18);
+girl.getName();
+```
+
 ## 2. 实现const
 
 - 此处需要用到Object.defineProperty(Obj,prop,desc)这个API
@@ -75,139 +107,7 @@ _const('obj',{a:1}) //定义obj
 obj = {} //重新赋值不生效
 ```
 
-## 3. 手写Call
-
-原理：
-
-- 给CONTEXT设置一个属性(属性名尽可能保持唯一,避免我们自己设置的属性修改默认对象中的结构,例如可以基于Symbol实现,也可以创建一个时间戳名字),属性值一定是我们要执行的函数(也就是THIS,CALL中的THIS就是我们要操作的这个函数)
-
-- 接下来基于CONTEXT.XXX()成员访问执行方法，就可以把函数执行，并且改变里面的THIS(还可以把PARAMS中的信息传递给这个函数即可);都处理完了，别忘记把给CONTEXT设置的这个属性删除掉(人家之前没有你自己加，加完了我们需要把它删了)
-
-```js
-Function.prototype.call = function(context,...params){
-  let key = Symbol('key'),//设置唯一值
-      result;
-  !/^(object|function)$/.test(typeof context) ? context = Object(context) :null;
-  context !=null ? null : context = window;//如果context为null或者undefined，直接赋值为window
-
-  context[key] = this;
-  result = context[key](...params);//返回值
-  delete context[key];
-  return result;
-}
-```
-
-
-```js
-//手写call
-let obj = {
-  msg: "我叫王大锤",
-}
-
-function foo() {
-  console.log(this.msg)
-}
-
-// foo.call(obj)
-//调用call的原理就跟这里一样，将函数挂载到对象上，然后在对象中执行这个函数
-// obj.foo = foo
-// obj.foo()
-
-Function.prototype.myCall = function (thisArg, ...args) {
-  const fn = Symbol("fn") // 声明一个独有的Symbol属性, 防止fn覆盖已有属性
-  thisArg = thisArg || window // 若没有传入this, 默认绑定window对象
-  thisArg[fn] = this //this指向调用者
-  const result = thisArg[fn](...args) //执行当前函数
-  delete thisArg[fn]
-  return result
-}
-
-foo.myCall(obj)
-```
-
-
-## 4. 手写apply
-
-原理基本与call一样，但后面参数应该为数组
-
-```js
-Function.prototype.apply = function(context,params = []){
-  let key = Symbol('key'),
-      result;
-  !/^(object|function)$/.test(typeof context) ? context = Object(context) :null;
-  context !=null ? null : context = window;
-
-  context[key] = this;
-  result = context[key](...params);
-  delete context[key];
-  return result;
-}
-```
-
-```js
-// 手写apply (args传入一个数组的形式)，原理其实和call差不多，只是入参不一样
-Function.prototype.myApply = function (thisArg, args = []) {
-  const fn = Symbol("fn")
-  thisArg = thisArg || window
-  thisArg[fn] = this
-  //虽然apply()接收的是一个数组，但在调用原函数时，依然要展开参数数组
-  //可以对照原生apply()，原函数接收到展开的参数数组
-  const result = thisArg[fn](...args)
-  delete thisArg[fn]
-  return result
-}
-
-foo.myApply(obj)
-```
-
-## 5. 手写bind
-
-原理：
-
-- bind() 函数会创建一个新函数（称为绑定函数），新函数与被调函数（绑定函数的目标函数）具有相同的函数体（在 ECMAScript 5 规范中内置的call属性）。
-
-- 当目标函数被调用时 this 值绑定到 bind() 的第一个参数，该参数不能被重写。绑定函数被调用时，bind() 也接受预设的参数提供给原函数。
-
-- 一个绑定函数也能使用new操作符创建对象：这种行为就像把原函数当成构造器。提供的 this 值被忽略，同时调用时的参数被提供给模拟函数。
-
-```js
-Function.prototype.bind = function(context,...params){
-	let self = this;
-    return funtion(...innerArgs){
-    	params = params.concat(...innerArgs);
-        return self.call(context,...params);
-    }
-}
-```
-
-```js
-Function.prototype.myBind = function (thisArg, ...args) {
-  let self = this //这里的this是指向thisArg(调用者)
-  let fnBound = function () {
-    //this instanceof self ? this : thisArg 判断是构造函数还是普通函数
-    //后面的args.concat(Array.prototype.slice.call(arguments))是利用函数柯里化来获取调用时传入的参数
-    self.apply(this instanceof self ? this : thisArg, args.concat(Array.prototype.slice.call(arguments)))
-  }
-  // 继承原型上的属性和方法
-  fnBound.prototype = Object.create(self.prototype)
-  //返回已经绑定的函数
-  return fnBound
-}
-
-//通过普通函数调用
-// foo.myBind(obj, 1, 2, 3)()
-
-//通过构造函数调用
-function fn(name, age) {
-  this.test = "测试数据"
-}
-fn.prototype.protoData = "原型数据"
-let fnBound = fn.myBind(obj, "王大锤", 18)
-let newBind = new fnBound()
-console.log(newBind.protoData) // "原型数据"
-```
-
-## 6. 模拟实现一个new操作符
+## 3. 模拟实现一个new操作符
 
 - 原理：
     
@@ -282,7 +182,64 @@ function _new(target，...params){
 }
 ```
 
-## 7. 节流
+- 简化版
+  
+  - 步骤1：创建一个Func的实例对象（实例.proto = 类.prototype）
+  
+  - 步骤2：把Func 当做普通函数执行，并改变this指向
+  
+  - 步骤3：分析函数的返回值
+
+```js
+/**
+  * Func: 要操作的类（最后要创建这个类的实例）
+  * args：存储未来传递给Func类的实参
+  */
+function _new(Func, ...args) {
+  
+  // 创建一个Func的实例对象（实例.____proto____ = 类.prototype）
+  let obj = {};
+  obj.__proto__ = Func.prototype;
+  
+  // 把Func当做普通函数执行，并改变this指向
+  let result = Func.call(obj, ...args);
+  
+  // 分析函数的返回值
+  if (result !== null && /^(object|function)$/.test(typeof result)) {
+    return result;
+	}
+  return obj;
+}
+```
+
+- 优化版： proto 在IE浏览器中不支持
+
+```js
+let x = { name: "lsh" };
+Object.create(x);
+
+{}.__proto__ = x;
+
+
+function _new(Func, ...args) {
+  
+  // let obj = {};
+  // obj.__proto__ = Func.prototype;
+  // 创建一个Func的实例对象（实例.____proto____ = 类.prototype）
+  let obj = Object.create(Func.prototype);
+  
+  // 把Func当做普通函数执行，并改变this指向
+  let result = Func.call(obj, ...args);
+  
+  // 分析函数的返回值
+  if (result !== null && /^(object|function)$/.test(typeof result)) {
+    return result;
+  }
+  return obj;
+}
+```
+
+## 4. 节流
 
 节流可以控制事件触发的频率，节流就跟小水管一样，如果不加节流的话，水就会哗啦啦啦啦啦啦的流出来，但是一旦加了节流阀，你就可以自己控制水的流速了，加了节流后水可以从哗啦啦啦变成滴答滴答滴答，放到我们的函数事件里面说就是可以让事件触发变慢，比如说事件触发可以让它在每一秒内只触发一次，可以提高性能。
 
@@ -334,7 +291,57 @@ function throttle(func,wait = 300){
 }
 ```
 
-## 8. 防抖
+- 【第一次触发：reamining是负数，previous被赋值为当前时间】
+
+- 【第二次触发：假设时间间隔是500ms，第一次执行完之后，20ms之后，立即触发第二次，则remaining = 500 - ( 新的当前时间 - 上一次触发时间 ) = 500 - 20 = 480 】
+
+```js
+/**
+ * 实现函数的节流 （目的是频繁触发中缩减频率）
+ * @param {*} func 需要执行的函数
+ * @param {*} wait 检测节流的间隔频率
+ * @param {*} immediate 是否是立即执行 True：第一次，默认False：最后一次
+ * @return {可被调用执行的函数}
+ */
+function throttle(func, wait) {
+	let timer = null
+  let previous = 0  // 记录上一次操作的时间点
+
+  return function anonymous(... params) {
+    let now = new Date()  // 当前操作的时间点
+    remaining = wait - (now - previous) // 剩下的时间
+    if (remaining <= 0) {
+      // 两次间隔时间超过频率，把方法执行
+      
+      clearTimeout(timer); // clearTimeout是从系统中清除定时器，但timer值不会变为null
+      timer = null; // 后续可以通过判断 timer是否为null，而判断是否有 定时器
+      
+      // 此时已经执行func 函数，应该将上次触发函数的时间点 = 现在触发的时间点 new Date()
+      previous = new Date(); // 把上一次操作时间修改为当前时间
+      func.call(this, ...params);
+    } else if(!timer){ 
+      
+      // 两次间隔的事件没有超过频率，说明还没有达到触发标准，设置定时器等待即可（还差多久等多久）
+      // 假设事件间隔为500ms，第一次执行完之后，20ms后再次点击执行，则剩余 480ms，就能等待480ms
+      timer = setTimeout( _ => {
+        clearTimeout(timer)
+        timer = null // 确保每次执行完的时候，timer 都清 0，回到初始状态
+        
+        //过了remaining时间后，才去执行func，所以previous不能等于初始时的 now
+        previous = new Date(); // 把上一次操作时间修改为当前时间
+        func.call(this, ...params)；
+      }, remaining)
+    }
+  }
+}
+
+function func() {
+  console. log('ok')
+}
+btn. onclick = throttle(func, 500)
+```
+
+## 5. 防抖
 
 防抖就是可以限制事件在一定时间内不能多次触发，比如说你疯狂按点击按钮，一顿操作猛如虎，不加防抖的话它也会跟着你疯起来，疯狂执行触发的方法。但是一旦加了防抖，无论你点击多少次，他都只会在你最后一次点击的时候才执行。 防抖常用于搜索框或滚动条等的监听事件处理，可以提高性能。
 
@@ -386,7 +393,70 @@ function debounce(func,wait = 300,immediate = false){
 }
 ```
 
-## 9. 深拷贝和浅拷贝
+- 以最后一次触发为标准
+
+```js
+/**
+ * 实现函数的防抖（目的是频繁触发中只执行一次）
+ * @param {*} func 需要执行的函数
+ * @param {*} wait 检测防抖的间隔频率
+ * @param {*} immediate 是否是立即执行  True：第一次，默认False：最后一次
+ * @return {可被调用执行的函数}
+ */
+function debounce(func, wati = 500, immediate = false) {
+  let timer = null
+  return function anonymous(... params) {
+
+    clearTimeout(timer)
+    timer = setTimeout(_ => {
+      // 在下一个500ms 执行func之前，将timer = null
+      //（因为clearInterval只能清除定时器，但timer还有值）
+      // 为了确保后续每一次执行都和最初结果一样，赋值为null
+      // 也可以通过 timer 是否 为 null 是否有定时器
+      timer = null
+      func.call(this, ...params)
+    }, wait)
+
+  }
+}
+```
+
+- 以第一次触发为标准
+
+```js
+/**
+ * 实现函数的防抖（目的是频繁触发中只执行一次）
+ * @param {*} func 需要执行的函数
+ * @param {*} wait 检测防抖的间隔频率
+ * @param {*} immediate 是否是立即执行 True：第一次，默认False：最后一次
+ * @return {可被调用执行的函数}
+ */
+function debounce(func, wait = 500, immediate = true) {
+  let timer = null
+  return function anonymous(... params) {
+
+    // 第一点击 没有设置过任何定时器 timer就要为 null
+    let now = immediate && !timer
+    clearTimeout(timer)
+    timer = setTimeout(_ => {
+      // 在下一个500ms 执行func之前，将timer = null
+      //（因为clearInterval只能在系统内清除定时器，但timer还有值）
+      // 为了确保后续每一次执行都和最初结果一样，赋值为null
+      // 也可以通过 timer 是否 为 null 是否有定时器
+      timer = null!immediate ? func.call(this, ...params) : null
+    }, wait)
+    now ? func.call(this, ...params) : null
+
+  }
+}
+
+function func() {
+  console. log('ok')
+}
+btn. onclick = debounce(func, 500)
+```
+
+## 6. 深拷贝和浅拷贝
 
 **浅拷贝**： 顾名思义，所谓浅拷贝就是对对象进行浅层次的复制，只复制一层对象的属性，并不包括对象里面的引用类型数据 ， 当遇到有子对象的情况时，子对象就会互相影响 ，修改拷贝出来的子对象也会影响原有的子对象
 
@@ -493,6 +563,23 @@ function shallowCopy(source) {
 }
 ```
 
+- 浅克隆：只拷贝对象或数组的第一层内容
+
+```js
+const shallClone = (target) => {
+  if (typeof target === 'object' && target !== null) {
+    const cloneTarget = Array.isArray(target) ? [] : {};
+    for (let prop in target) {
+      if (target.hasOwnProperty(prop)) { // 遍历对象自身可枚举属性（不考虑继承属性和原型对象）
+        cloneTarget[prop] = target[prop];
+    }
+    return cloneTarget;
+  } else {
+    return target;
+  }
+}
+```
+
 ### 深拷贝
 
 #### 1. 最简单的深拷贝方式
@@ -524,6 +611,21 @@ function deepCopy(source) {
     }
   }
   return target
+}
+```
+
+```js
+function deepClone(target)  {
+  if (target === null) return null;
+  if (typeof target !== 'object') return target;
+
+  const cloneTarget = Array.isArray(target) ? [] : {};
+  for (let prop in target) {
+    if (target.hasOwnProperty(prop)) {
+      cloneTarget[prop] = deepClone(target[prop]);
+    }
+  }
+  return cloneTarget;
 }
 ```
 
@@ -573,7 +675,38 @@ function deepCopy(source, cache = new Map()) {
 }
 ```
 
-## 10. 实现一个sleep休眠函数
+```js
+const isObject = (target) =>
+  (typeof target === "object" || typeof target === "function") &&
+  target !== null;
+
+function deepClone(target, map = new Map()) {
+  // 先判断该引用类型是否被 拷贝过
+  if (map.get(target)) {
+    return target;
+  }
+  // 获取当前值的构造函数：获取它的类型
+  let constructor = target.constructor;
+  // 检测当前对象target是否与 正则、日期格式对象匹配
+  if (/^(RegExp|Date)$/i.test(constructor.name)) {
+    return new constructor(target); // 创建一个新的特殊对象(正则类/日期类)的实例
+  }
+  if (isObject(target)) {
+    map.set(target, true); // 为循环引用的对象做标记
+    const cloneTarget = Array.isArray(target) ? [] : {};
+    for (let prop in target) {
+      if (target.hasOwnProperty(prop)) {
+        cloneTarget[prop] = deepClone(target[prop], map);
+      }
+    }
+    return cloneTarget;
+  } else {
+    return target;
+  }
+}
+```
+
+## 7. 实现一个sleep休眠函数
 
 从Promise，async/await，generator等角度出发进行考虑
 
@@ -622,7 +755,33 @@ function foo() {
 sleepCb(foo, 1000)
 ```
 
-## 11. 实现一个repeat重复执行函数
+```js
+/**
+ *
+ * @param {*} fn 要执行的函数
+ * @param {*} wait 等待的时间
+ */
+function sleep(wait) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      resolve();
+    }, wait);
+  });
+}
+
+let sayHello = (name) => console.log(`hello ${name}`);
+
+async function autoRun() {
+  await sleep(3000);
+  let demo1 = sayHello("时光屋小豪");
+  let demo2 = sayHello("掘友们");
+  let demo3 = sayHello("aaa");
+}
+
+autoRun();
+```
+
+## 8. 实现一个repeat重复执行函数
 
 传入一个方法，然后每隔一段时间执行一次，执行n次
 
@@ -647,7 +806,7 @@ const repeatFn = repeat(console.log, 4, 2000)
 repeatFn('helloworld')
 ```
 
-## 12. 实现一个函数将下划线命名转化成驼峰命名法
+## 9. 实现一个函数将下划线命名转化成驼峰命名法
 
 ```js
 function formatHump(str) {
@@ -668,7 +827,7 @@ function formatHump(str) {
 console.log(formatHump("get_element_by_id"))  //getElementById
 ```
 
-## 13. 实现一个带并发限制的异步调度器Scheduler，最多同时运行两个任务
+## 10. 实现一个带并发限制的异步调度器Scheduler，最多同时运行两个任务
 
 ```js
 //异步调度器
@@ -730,7 +889,17 @@ addTask(400, "4")
 
 
 
-## 14. instanceof
+## 11. instanceof
+
+1. 步骤1：先取得当前类的原型，当前实例对象的原型链
+
+​2. 步骤2：一直循环（执行原型链的查找机制）
+
+- 取得当前实例对象原型链的原型链（proto = proto.____proto____，沿着原型链一直向上查找）
+
+- 如果 当前实例的原型链____proto__上找到了当前类的原型prototype，则返回 true
+
+- 如果 一直找到Object.prototype.____proto____ ==  null，Object的基类(null)上面都没找到，则返回 false
 
 ```js
 function _instanceof(L,R){    
@@ -752,7 +921,53 @@ function _instanceof(L,R){
 }
 ```
 
-## 15. 数组扁平化的方法
+```js
+function _instanceof (instanceObject, classFunc) {
+	let classFunc = classFunc.prototype; // 取得当前类的原型
+  let proto = instanceObject.__proto__; // 取得当前实例对象的原型链
+  
+  while (true) {
+    if (proto === null) { // 找到了 Object的基类 Object.prototype.__proto__
+      return false;
+		};
+    if (proto === classFunc) { // 在当前实例对象的原型链上，找到了当前类
+      return true;
+    }
+    proto = proto.__proto__; // 沿着原型链__ptoto__一层一层向上查找
+  }
+}
+```
+
+### 处理兼容问题
+
+> Object.getPrototypeOf ( )：用来获取某个实例对象的原型（内部[[prototype]]属性的值，包含proto属性）
+
+```js
+function _instanceof (instanceObject, classFunc) {
+	let classFunc = classFunc.prototype; // 取得当前类的原型
+  let proto = Object.getPrototypeOf(instanceObject); // 取得当前实例对象的原型链上的属性
+  
+  while (true) {
+    if (proto === null) { // 找到了 Object的基类 Object.prototype.__proto__
+      return false;
+		};
+    if (proto === classFunc) { // 在当前实例对象的原型链上，找到了当前类
+      return true;
+    }
+    proto = Object.getPrototypeOf(proto); // 沿着原型链__ptoto__一层一层向上查找
+  }
+}
+```
+
+## 12. 数组扁平化flat的方法
+
+- 循环数组里的每一个元素
+
+- 判断该元素是否为数组
+
+  - 是数组的话，继续循环遍历这个元素——数组
+
+  - 不是数组的话，把元素添加到新的数组中
 
 ```js
 //使用ES6中的Array.prototype.flat方法
@@ -760,6 +975,27 @@ arr.flat(Infinity)
 
 let arr = [1,2,[3,4,[5,[6]]]]
 console.log(arr.flat(Infinity))//flat参数为指定要提取嵌套数组的结构深度，默认值为 1
+```
+
+```js
+const myFlat = (arr) => {
+  let newArr = [];
+  let cycleArray = (arr) => {
+    for(let i = 0; i < arr.length; i++) {
+      let item = arr[i];
+      if (Array.isArray(item)) {
+        cycleArray(item);
+        continue;
+      } else {
+        newArr.push(item);
+      }
+    }
+  }
+  cycleArray(arr);
+  return newArr;
+}
+
+myFlat(arr); // [1, 2, 2, 3, 4, 5, 5, 6, 7, 8, 9, 11, 12, 12, 13, 14, 10]
 ```
 
 ```js
@@ -794,7 +1030,38 @@ function arrFlat(arr) {
 }
 ```
 
-## 16. 事件绑定
+```js
+let arr = [
+    [1, 2, 2],
+    [3, 4, 5, 5],
+    [6, 7, 8, 9, [11, 12, [12, 13, [14]]]], 10
+];
+
+function myFlat() {
+  _this = this; // 保存 this：arr
+  let newArr = [];
+  // 循环arr中的每一项，把不是数组的元素存储到 newArr中
+  let cycleArray = (arr) => {
+    for (let i=0; i< arr.length; i++) {
+      let item = arr[i];
+      if (Array.isArray(item)) { // 元素是数组的话，继续循环遍历该数组
+        cycleArray(item);
+        continue;
+      } else{
+        newArr.push(item); // 不是数组的话，直接添加到新数组中
+      }
+    }
+  }
+  cycleArray(_this); // 循环数组里的每个元素
+  return newArr; // 返回新的数组对象
+}
+
+Array.prototype.myFlat = myFlat;
+
+arr = arr.myFlat(); // [1, 2, 2, 3, 4, 5, 5, 6, 7, 8, 9, 11, 12, 12, 13, 14, 10]
+```
+
+## 13. 事件绑定
 
 1. 直接在html中定义事件
 
@@ -826,9 +1093,427 @@ btn.addEventListener("click",function(){
 
 > 同样的事件类型，绑定多次，每个都会执行，可以设置时捕获还是冒泡。
 
-## 10.
-## 10.
-## 10.
-## 10.
-## 10.
-## 10.
+## 14. 手动实现Object.create
+
+```js
+Object.create() = function create(prototype) {
+  // 排除传入的对象是 null 和 非object的情况
+	if (prototype === null || typeof prototype !== 'object') {
+    throw new TypeError(`Object prototype may only be an Object: ${prototype}`);
+	}
+  // 让空对象的 __proto__指向 传进来的 对象(prototype)
+  // 目标 {}.__proto__ = prototype
+  function Temp() {};
+  Temp.prototype = prototype;
+  return new Temp;
+}
+```
+
+## 15. 数组去重
+
+- 思想一：数组最后一项元素替换掉当前项元素，并删除最后一项元素
+
+```js
+let arr = [12, 23, 12, 15, 25, 23, 16, 25, 16];
+
+for(let i = 0; i < arr.length - 1; i++) {
+  let item = arr[i]; // 取得当前数组中的每一项
+  let remainArgs = arr.slice(i+1); // 从 i+1项开始截取数组中剩余元素，包括i+1位置的元素
+  if (remainArgs.indexOf(item) > -1) { // 数组的后面元素 包含当前项
+    arr[i] = arr[arr.length - 1]; // 用数组最后一项替换当前项
+    arr.length--; // 删除数组最后一项
+    i--; // 仍从当前项开始比较
+  }
+}
+
+console.log(arr); // [ 16, 23, 12, 15, 25 ]
+```
+
+- 思想二：新容器存储思想——对象键值对
+
+  - 把数组元素作为对象属性
+
+  ​- 通过遍历数组，判断数组元素是否已经是对象的属性，如果对象属性定义过，则证明是重复元素，进而删除重复元素
+
+```js
+let obj = {};
+for (let i=0; i < arr.length; i++) {
+  let item = arr[i]; // 取得当前项
+  if (typeof obj[item] !== 'undefined') {
+    // obj 中存在当前属性，则证明当前项 之前已经是 obj属性了
+    // 删除当前项
+    arr[i] = arr[arr.length-1];
+    arr.length--;
+    i--;
+  }
+  obj[item] = item; // obj {10: 10, 16: 16, 25: 25 ...}
+}
+obj = null; // 垃圾回收
+console.log(arr); // [ 16, 23, 12, 15, 25 ]
+```
+
+- 思想三：相邻项的处理方案思想——基于正则
+
+```js
+let arr = [12, 23, 12, 15, 25, 23, 16, 25, 16];
+
+arr.sort((a,b) => a-b);
+arrStr = arr.join('@') + '@';
+let reg = /(\d+@)\1*/g,
+    newArr = [];
+arrStr.replace(reg, (val, group1) => {
+ // newArr.push(Number(group1.slice(0, group1.length-1)));
+ newArr.push(parseFloat(group1));
+})
+console.log(newArr); // [ 12, 15, 16, 23, 25 ]
+```
+
+## 16. 基于Generator函数实现async/await原理
+
+> **核心：**传递给我一个Generator函数，把函数中的内容基于Iterator迭代器的特点一步步的执行
+
+```js
+function readFile(file) {
+	return new Promise(resolve => {
+		setTimeout(() => {
+			resolve(file);
+    }, 1000);
+	})
+};
+
+function asyncFunc(generator) {
+	const iterator = generator(); // 接下来要执行next
+  // data为第一次执行之后的返回结果，用于传给第二次执行
+  const next = (data) => {
+		let { value, done } = iterator.next(data); // 第二次执行，并接收第一次的请求结果 data
+    
+    if (done) return; // 执行完毕(到第三次)直接返回
+    // 第一次执行next时，yield返回的 promise实例 赋值给了 value
+    value.then(data => {
+      next(data); // 当第一次value 执行完毕且成功时，执行下一步(并把第一次的结果传递下一步)
+    });
+  }
+  next();
+};
+
+asyncFunc(function* () {
+	// 生成器函数：控制代码一步步执行 
+  let data = yield readFile('a.js'); // 等这一步骤执行执行成功之后，再往下走，没执行完的时候，直接返回
+  data = yield readFile(data + 'b.js');
+  return data;
+})
+```
+
+## 17. 基于Promise封装Ajax
+
+- 返回一个新的Promise实例
+
+- 创建HMLHttpRequest异步对象
+
+- 调用open方法，打开url，与服务器建立链接（发送前的一些处理）
+
+- 监听Ajax状态信息
+
+- 如果xhr.readyState == 4（表示服务器响应完成，可以获取使用服务器的响应了）
+
+  - xhr.status == 200，返回resolve状态
+
+  - xhr.status == 404，返回reject状态
+
+- xhr.readyState !== 4，把请求主体的信息基于send发送给服务器
+
+```js
+function ajax(url, method) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open(url, method, true)
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          resolve(xhr.responseText)
+        } else if (xhr.status === 404) {
+          reject(new Error('404'))
+        }
+      } else {
+        reject('请求数据失败')
+      }
+    }
+    xhr.send(null)
+  })
+}
+```
+
+## 18. 手动实现JSONP跨域
+
+- 创建script标签
+
+- 设置script标签的src属性，以问号传递参数，设置好回调函数callback名称
+
+- 插入到html文本中
+
+- 调用回调函数，res参数就是获取的数据
+
+```js
+let script = document.createElement('script');
+
+script.src = 'http://www.baidu.cn/login?username=JasonShu&callback=callback';
+
+document.body.appendChild(script);
+
+function callback (res) {
+	console.log(res);
+}
+```
+
+## 19. ES5手动实现数组reduce
+
+- 初始值不传时的特殊处理：会默认使用数组中的第一个元素
+  
+  - 函数的返回结果会作为下一次循环的prev
+  
+  - 回调函数一共接受四个参数（arr.reduce(prev, next, currentIndex, array))）
+  
+    - prev：上一次调用回调时返回的值
+  
+    - 正在处理的元素
+  
+    - 正在处理的元素的索引
+  
+    - 正在遍历的集合对象
+
+```js
+Array.prototype.myReduce = function(fn, prev) {
+  for (let i = 0; i < this.length; i++) {
+    if (typeof prev === 'undefined') {
+      prev = fn(this[i], this[i+1], i+1, this);
+      ++i;
+    } else {
+      prev = fn(prev, this[i], i, this);
+    }
+  }
+  return prev
+}
+```
+
+```js
+let sum = [1, 2, 3].myReduce((prev, next) => {
+  return prev + next
+});
+
+console.log(sum); // 6
+```
+
+## 20. 手动实现通用柯理化函数
+
+**柯理化函数含义：**是给函数分步传递参数，每次传递部分参数，并返回一个更具体的函数接收剩下的参数，这中间可嵌套多层这样的接收部分参数的函数，直至返回最后结果。
+
+```js
+// add的参数不固定，看有几个数字累计相加
+function add (a,b,c,d) {
+  return a+b+c+d
+}
+
+function currying (fn, ...args) {
+  // fn.length 回调函数的参数的总和
+  // args.length currying函数 后面的参数总和 
+  // 如：add (a,b,c,d)  currying(add,1,2,3,4)
+  if (fn.length === args.length) {  
+    return fn(...args)
+  } else {
+    // 继续分步传递参数 newArgs 新一次传递的参数
+    return function anonymous(...newArgs) {
+      // 将先传递的参数和后传递的参数 结合在一起
+      let allArgs = [...args, ...newArgs]
+      return currying(fn, ...allArgs)
+    }
+  }
+}
+
+let fn1 = currying(add, 1, 2) // 3
+let fn2 = fn1(3)  // 6
+let fn3 = fn2(4)  // 10
+```
+
+## 21. 手动实现发布订阅
+
+> 发布订阅的核心:： 每次event. emit（发布），就会触发一次event. on（注册）
+
+```js
+class EventEmitter {
+  constructor() {
+    // 事件对象，存放订阅的名字和事件
+    this.events = {};
+  }
+  // 订阅事件的方法
+  on(eventName,callback) {
+    if (!this.events[eventName]) {
+      // 注意数据，一个名字可以订阅多个事件函数
+      this.events[eventName] = [callback];
+    } else  {
+      // 存在则push到指定数组的尾部保存
+      this.events[eventName].push(callback)
+    }
+  }
+  // 触发事件的方法
+  emit(eventName) {
+    // 遍历执行所有订阅的事件
+    this.events[eventName] && this.events[eventName].forEach(cb => cb());
+  }
+}
+```
+
+- 测试用例
+
+```js
+let em = new EventEmitter();
+
+function workDay() {
+  console.log("每天工作");
+}
+function makeMoney() {
+    console.log("赚100万");
+}
+function sayLove() {
+  console.log("向喜欢的人示爱");
+}
+em.on("money",makeMoney);
+em.on("love",sayLove);
+em.on("work", workDay);
+
+em.emit("money");
+em.emit("love");  
+em.emit("work");  
+```
+
+## 22. 手动实现观察者模式
+
+> 观察者模式（基于发布订阅模式） 有观察者，也有被观察者
+
+观察者需要放到被观察者中，被观察者的状态变化需要通知观察者 我变化了 内部也是基于发布订阅模式，收集观察者，状态变化后要主动通知观察者
+
+```js
+class Subject { // 被观察者 学生
+  constructor(name) {
+    this.state = '开心的'
+    this.observers = []; // 存储所有的观察者
+  }
+  // 收集所有的观察者
+  attach(o){ // Subject. prototype. attch
+    this.observers.push(o)
+  }
+  // 更新被观察者 状态的方法
+  setState(newState) {
+    this.state = newState; // 更新状态
+    // this 指被观察者 学生
+    this.observers.forEach(o => o.update(this)) // 通知观察者 更新它们的状态
+  }
+}
+
+class Observer{ // 观察者 父母和老师
+  constructor(name) {
+    this.name = name
+  }
+  update(student) {
+    console.log('当前' + this.name + '被通知了', '当前学生的状态是' + student.state)
+  }
+}
+
+let student = new Subject('学生'); 
+
+let parent = new Observer('父母'); 
+let teacher = new Observer('老师'); 
+
+// 被观察者存储观察者的前提，需要先接纳观察者
+student. attach(parent); 
+student. attach(teacher); 
+student. setState('被欺负了');
+```
+
+## 23. 手动实现Object.freeze(**有问题**)
+
+Object.freeze冻结一个对象，让其不能再添加/删除属性，也不能修改该对象已有属性的可枚举性、可配置可写性，也不能修改已有属性的值和它的原型属性，最后返回一个和传入参数相同的对象。
+
+```js
+function myFreeze(obj){
+  // 判断参数是否为Object类型，如果是就封闭对象，循环遍历对象。去掉原型属性，将其writable特性设置为false
+  if(obj instanceof Object){
+    Object.seal(obj);  // 封闭对象
+    for(let key in obj){
+      if(obj.hasOwnProperty(key)){
+        Object.defineProperty(obj,key,{
+          writable:false   // 设置只读
+        })
+        // 如果属性值依然为对象，要通过递归来进行进一步的冻结
+        myFreeze(obj[key]);  
+      }
+    }
+  }
+}
+```
+
+## 24. 手动实现Promise.all
+
+- Promise.all：有一个promise任务失败就全部失败
+
+- Promise.all方法返回的是一个promise
+
+```js
+function isPromise (val) {
+  return typeof val.then === 'function'; // (123).then => undefined
+}
+
+Promise.all = function(promises) {
+  return new Promise((resolve, reject) => {
+    let arr = []; // 存放 promise执行后的结果
+    let index = 0; // 计数器，用来累计promise的已执行次数
+    const processData = (key, data) => {
+      arr[key] = data; // 不能使用数组的长度来计算
+      /*
+        if (arr.length == promises.length) {
+          resolve(arr);  // [null, null , 1, 2] 由于Promise异步比较慢，所以还未返回
+        }
+      */
+     if (++index === promises.length) {
+      // 必须保证数组里的每一个
+       resolve(arr);
+     }
+    }
+    // 遍历数组依次拿到执行结果
+    for (let i = 0; i < promises.length; i++) {
+      let result = promises[i];
+      if(isPromise(result)) {
+        // 让里面的promise执行，取得成功后的结果
+        // data promise执行后的返回结果
+        result.then((data) => {
+          // 处理数据，按照原数组的顺序依次输出
+          processData(i ,data)
+        }, reject)  // reject本事就是个函数 所以简写了
+      } else {
+        // 1 , 2
+        processData(i ,result)
+      }
+    }
+  })
+}
+```
+
+- 测试用例
+
+```js
+let fs = require('fs').promises;
+
+let getName = fs.readFile('./name.txt', 'utf8');
+let getAge = fs.readFile('./age.txt', 'utf8');
+
+Promise.all([1, getName, getAge, 2]).then(data => {
+	console.log(data); // [ 1, 'name', '11', 2 ]
+})
+```
+
+## 19.
+## 19.
+## 19.
+## 19.
+## 19.
+## 19.
+## 19.

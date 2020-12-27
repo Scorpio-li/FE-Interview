@@ -24,6 +24,7 @@
     * [Promise](javascript/promise.md)
     * [跨域](javascript/cross-domain.md)
     * [ES6](javascript/es6.md)
+    * [this指向](javascript/this.md)
     * [性能优化](javascript/performance.md)
     * [手写代码逻辑](javascript/handleWrittenCode.md)
 

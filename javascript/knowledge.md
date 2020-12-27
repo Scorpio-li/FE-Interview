@@ -2,7 +2,7 @@
  * @Author: Li Zhiliang
  * @Date: 2020-11-18 11:03:22
  * @LastEditors: Li Zhiliang
- * @LastEditTime: 2020-12-16 17:23:44
+ * @LastEditTime: 2020-12-26 15:27:01
  * @FilePath: /FE-Interview.git/javascript/knowledge.md
 -->
 # Knowledge
@@ -182,7 +182,7 @@ myEvent.initEvent(
 )
 ```
 
-- createEvent：创建一个事件
+- document.createEvent('Event') 创建事件
 
 - initEvent：初始化一个事件
 
@@ -196,7 +196,7 @@ button.addEventListener('event_name', function (e) {})
 
 **事件的触发**
 
-触发自定义事件使用dispatchEvent(myEvent)。
+- 触发自定义事件使用dispatchEvent(myEvent)。
 
 注意⚠️，这里的参数是要自定义事件的对象(也就是myEvent)，而不是自定义事件的名称('myEvent')
 
@@ -221,6 +221,19 @@ btn.addEventListener('myEvent', function (e) {
 setTimeout(() => {
   btn.dispatchEvent(myEvent)
 }, 2000)
+```
+
+### 新模式
+
+```js
+const div = document.createElement('div') // 不创建元素，直接用 window 对象也可以
+const event = new Event('build')
+
+div.addEventListener('build', function(e) {
+    console.log(111)
+})
+
+div.dispatchEvent(event)
 ```
 
 ## 12. 冒泡和捕获的具体过程
@@ -495,13 +508,38 @@ setTimeout2	| then2
 
 关于闭包，根据红宝书第3版的解释是：闭包是指有权访问另一个函数作用域中的变量的函数。
 
+```js
+function sayHi(name) {
+    return () => {
+       console.log(`Hi! ${name}`)
+    }
+}
+const test = sayHi('xiaoming')
+test() // Hi! xiaoming
+```
+
+虽然sayHi函数已经执行完毕，但是其活动对象也不会被销毁，因为test函数仍然引用着sayHi函数中的变量name，这就是闭包。
+
 - 函数执行会形成一个私有上下文，如果上下文中的某些内容（一般指的是堆内存地址）被上下文以外的些事物（例如：变量、事件绑定）所占用，则当前上下文不能被出栈释放（浏览器的垃圾回收机制GC所决定的） > => 闭包的机制：形成一个不被释放的上下文；
 
-- 保护：保护私有上下文中的私有变量和外界互不影响>
+```js
+// 利用闭包实现私有属性
+const test = (function () {
+    let value = 0
+    return {
+        getVal() { return value },
+        setVal(val) { value = val }
+    } 
+})()
+
+// 上面的代码实现了一个私有属性 value，它只能用过 getVal() 来取值，通过 setVal(val) 来设置值。
+```
+
+- 保护：保护私有上下文中的私有变量和外界互不影响
 
 - 保存：上下文不被释放，那么上下文中的私有变量和值都会保存起来，可以供其下级上下文使用
 
-- 弊端：如果大量使用闭包，会导致栈内存太大，页面渲染变慢，性能受到影响，所以真是项目中想要合理应用闭包；某些代码会导致栈溢出或者内存泄露，这些操作都是需要我们注意的.
+- 弊端：如果大量使用闭包，因为闭包引用着另一个函数的变量，导致另一个函数即使不使用了也无法销毁，所以闭包使用过多，会占用较多的内存，页面渲染变慢，性能受到影响，所以真是项目中想要合理应用闭包；某些代码会导致栈溢出或者内存泄露，这些操作都是需要我们注意的.
 
 
 
@@ -516,7 +554,32 @@ typeof 一般被用于判断一个变量的类型，我们可以利用 typeof �
 
 ## 28. 什么是事件委托？它有什么好处？
 
+事件委托利用了事件冒泡，只指定一个事件处理程序，就可以管理某一类型的所有事件。所有用到按钮的事件（多数鼠标事件和键盘事件）都适合采用事件委托技术， 使用事件委托可以节省内存。
+
 事件委托是利用事件冒泡机制处理指定一个事件处理程序，来管理某一类型的所有事件 利用冒泡的原理，将事件加到父级身上，触发执行效果，这样只在内存中开辟一块空间，既节省资源又减少DOM操作，提高性能 动态绑定事件，列表新增元素不用进行重新绑定了
+
+```js
+<ul>
+  <li>苹果</li>
+  <li>香蕉</li>
+  <li>凤梨</li>
+</ul>
+
+// good
+document.querySelector('ul').onclick = (event) => {
+  let target = event.target
+  if (target.nodeName === 'LI') {
+    console.log(target.innerHTML)
+  }
+}
+
+// bad
+document.querySelectorAll('li').forEach((e) => {
+  e.onclick = function() {
+    console.log(this.innerHTML)
+  }
+}) 
+```
 
 ## 29. 使用js如何改变url，并且页面不刷新？
 
@@ -850,11 +913,59 @@ document.getElementById("vhcl_no").autocomplete = "off";
 $("#vhcl_no").attr('autocomplete', 'off');
 ```
 
-##
-##
-##
-##
-##
+## 41. 事件绑定的方式
+
+- 嵌入dom
+
+```js
+<button onclick="func()">按钮</button>
+```
+
+- 直接绑定
+
+```js
+btn.onclick = function(){}
+```
+
+- 事件监听
+
+```js
+btn.addEventListener('click',function(){})
+```
+
+## 42. target 和 currentTarget 区别
+
+- event.target 返回触发事件的元素
+
+- event.currentTarget 返回绑定事件的元素
+
+
+## 43. prototype 和 proto 的关系是什么
+
+- prototype 用于访问函数的原型对象。
+
+- __proto__ 用于访问对象实例的原型对象（或者使用 Object.getPrototypeOf()）。
+
+```js
+function Test() {}
+const test = new Test()
+test.__proto__ == Test.prototype // true
+```
+
+函数拥有 prototype 属性，对象实例拥有 __proto__ 属性，它们都是用来访问原型对象的。
+
+函数有点特别，它不仅是个函数，还是个对象。所以它也有 __proto__ 属性。
+
+```js
+const test = new Function('function Test(){}')
+test.__proto__ == Function.prototype // true
+```
+
+## 44. 原型继承
+
+所有的 JS 对象(JS 函数是 prototype)都有一个 __proto__ 属性，指向它的原型对象。当试图访问一个对象的属性时，如果没有在该对象上找到，它还会搜寻该对象的原型，以及该对象的原型的原型，依次层层向上搜索，直到找到一个名字匹配的属性或到达原型链的末尾。
+
+## 
 ##
 ##
 ##
