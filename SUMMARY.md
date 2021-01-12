@@ -20,7 +20,7 @@
 * [JS InterView](javascript/README.md)
     * [Question](javascript/question.md)
     * [Knowledge](javascript/knowledge.md)
-    * [事件循环](javascript/eventLoop.md)
+    * [事件机制](javascript/event.md)
     * [Promise](javascript/promise.md)
     * [跨域](javascript/cross-domain.md)
     * [ES6](javascript/es6.md)

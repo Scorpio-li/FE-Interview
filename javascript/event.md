@@ -1,13 +1,275 @@
 <!--
  * @Author: Li Zhiliang
- * @Date: 2020-11-20 14:49:52
+ * @Date: 2021-01-11 16:58:17
  * @LastEditors: Li Zhiliang
- * @LastEditTime: 2020-12-14 22:22:38
- * @FilePath: /FE-Interview.git/javascript/eventLoop.md
+ * @LastEditTime: 2021-01-11 17:44:18
+ * @FilePath: /FE-Interview.git/javascript/event.md
 -->
-# 事件循环（EventLoop）
+# 浏览器的事件机制
 
-## 1. 什么是事件循环？
+## 事件流
+
+JS 与 HTML 的交互是用事件实现的。事件流描述了页面接收事件的顺序。
+
+### 事件冒泡
+
+事件冒泡是 IE 团队提出的事件流方案，根据名字我们就可以看出，事件冒泡是从最具体的元素开始触发事件，然后向上传播至没有那么具体的元素（或文档）。
+
+![事件冒泡](https://cdn.jsdelivr.net/gh/Scorpio-li/picture/interview/img/event-bubbling.png)
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <div id="div"> Click me</div>
+</body>
+<script>
+  var div = document.querySelector('#div');
+  div.addEventListener('click', () => {
+    console.log('div click');
+  })
+
+  var body = document.querySelector('body');
+  body.addEventListener('click', () => {
+    console.log('body click');
+  })
+
+  var html = document.querySelector('html');
+  html.addEventListener('click', () => {
+    console.log('html click');
+  })
+
+  var document = document.querySelector('document');
+  document.addEventListener('click', () => {
+    console.log('document click');
+  })
+</script>
+</html>
+```
+
+- 输出
+
+```
+div click
+body click
+html click
+document click
+```
+所有的现代浏览器都是支持事件冒泡的。
+
+### 事件捕获
+
+事件捕获是 Netscape 开发团队提出的事件流解决方案。和事件冒泡相反，事件捕获是从最不具体的节点最先接收事件，向下传播至最具体的节点。事件捕获实际上是为了在事件到达最终目标前拦截事件。
+
+![事件捕获](https://cdn.jsdelivr.net/gh/Scorpio-li/picture/interview/img/event-capture)
+
+## 事件处理程序
+
+为了响应用户或者浏览器执行的某种动作（ click 、 load 、 mouseover ... ）而调用的 on 开头的函数被称为事件处理程序（事件监听器）。
+
+### HTML 事件处理程序
+
+特定的元素支持的每个事件都可以用 HTML 属性的形式使用事件处理程序。其实也就是我们最常使用的方式，如下代码， onclick  属性的值是 JS 代码或者其他的调用方法。
+
+使用事件监听器，浏览器会先创建一个函数来封装属性的值，这个函数有一个特殊的局部变量：event 用来保存 event 对象，事件处理函数中的 this 指向事件的目标元素。
+
+```html
+<input type="button" value="click me" onclick="console.log('click')" />
+```
+
+### DOM0 事件处理程序
+
+在 JavaScript 中创建事件监听器的传统方式是把一个函数赋值给 DOM 元素。兼容性最好，所有的浏览器都支持此方法。
+
+每个元素（包括 window 和 document）都有事件处理程序的属性（一般都 onxxxx），这个属性的值为一个函数。
+
+```js
+const btn = document.getElementById("myBtn");
+btn.onclick = function(){
+  console.log('Clicked')
+}
+```
+
+这样使用 DOM0 事件处理是发生在程序赋值时注册在事件流的冒泡阶段的。
+
+所赋值的函数被视为元素的方法，在元素的作用域中运行，this 指向该元素本身。在事件处理程序中通过 this 可以访问元素的任何属性和方法。
+
+将事件处理程序属性设置为 null，即可移除通过 DOM0 方式添加的事件处理程序。
+
+```js
+btn.onclick = null;
+```
+
+如果有多个 DOM0 事件处理程序的话，后面的是会把前面的给覆盖掉。只有执行最后一个调用的结果。
+
+### DOM2 事件处理程序
+
+我们也可以通过在所有的 DOM 节点上通过 addEventListener() 和 removeEventLinstener() 来添加和移除事件处理程序。
+
+addEventListener() 和 removeEventLinstener() 接收 3 个参数：**事件名****、事件处理函数** 和 **一个 option 对象或一个布尔值 useCapture**（ true  表示在捕获阶段调用事件处理程序， false （默认值）表示在冒泡阶段调用事件处理程序，因为跨浏览器兼容性好，所以事件处理程序默认会被添加到事件流的冒泡阶段（也就是默认最后一个参数为 false ））。
+
+**addEventListener(type, listener, useCapture | options)**
+
+option 参数有一下几个选择
+
+```html
+capture:  Boolean，表示 listener 会在该类型的事件捕获阶段传播到该 EventTarget 时触发。
+
+once:  Boolean，表示 listener 在添加之后最多只调用一次。如果是 true， listener 会在其被调用之后自动移除。
+
+passive: Boolean，设置为true时，表示 listener 永远不会调用 preventDefault()。如果 listener 仍然调用了这个函数，客户端将会忽略它并抛出一个控制台警告。
+```
+
+useCapture 参数如下
+
+```js
+useCapture  可选
+Boolean，在DOM树中，注册了listener的元素， 是否要先于它下面的EventTarget，调用该listener。 当useCapture(设为true) 时，沿着DOM树向上冒泡的事件，不会触发listener。当一个元素嵌套了另一个元素，并且两个元素都对同一事件注册了一个处理函数时，所发生的事件冒泡和事件捕获是两种不同的事件传播方式。事件传播模式决定了元素以哪个顺序接收事件。进一步的解释可以查看 事件流 及 JavaScript Event order 文档。 如果没有指定， useCapture 默认为 false 。
+```
+
+简单的说，我个人的理解是 useCapture 参数指定了该事件处理程序触发的“时机” ：是在事件流的捕获阶段还是冒泡阶段。但是，无论最后一个参数设置为什么，都不会阻碍事件流的传播。
+
+> Event 接口的 **preventDefault()**方法，告诉user agent：如果此事件没有被显式处理，它默认的动作也不应该照常执行。此事件还是继续传播，除非碰到事件侦听器调用stopPropagation() 或stopImmediatePropagation()，才停止传播。
+
+以上代码为会在事件流的指定阶段触发 click 的事件处理程序。与 DOM0 类似，这个事件处理程序同样被附加在元素的作用域中运行，所以，事件处理函数中的 this 指向的是该元素。
+
+DOM2 事件处理程序的一个优点是可以给一个元素添加多个事件处理程序，并按添加的顺序触发。
+
+使用addEventListener() 添加的事件处理程序只能使用 removeEventLinstener()移除（三个参数均一致才可以）；**所以，使用匿名函数添加的事件处理程序是不能被移除的。**
+
+### IE 事件处理程序
+
+IE 实现事件处理程序的方法是： attachEvent() 和 detachEvent() 这两个方法接收两个同样的参数：事件处理程序的名称（ eg: onclick ）和事件处理函数。因为 IE8 及更早的版本只支持事件冒泡，所以使用 attachEvent() 添加的事件处理程序是添加在冒泡阶段。
+
+```js
+const btn = document.getElementById("myBtn");
+
+btn.attachEvent("onclick", function(){
+  console.log("Clicked");
+})
+```
+
+IE 事件处理程序和 DOM2 事件处理程序有两个不一样的地方
+
+1. 作用域：attachEvent()是在全局作用域中运行的，所以 attachEvent() 中的函数中的 this 是 window；
+
+2. 执行顺序：IE 事件处理程序的执行顺序是和添加顺序相反的。
+
+### 四种事件处理程序的区别
+
+![](https://cdn.jsdelivr.net/gh/Scorpio-li/picture/interview/img/event-deal.png)
+
+## 事件对象
+
+在 DOM 中发生事件时，所有的相关信息都会被收集在一个名为 event 的对象中。这个对象包含了一些基本信息：触发事件的元素、事件的类型、以及一些与特定事件相关的其他数据（比如和鼠标事件相关的鼠标的位置信息）所有的浏览器都是支持这个 event 对象的。
+
+```js
+btn.onclick = function(event){
+  console.log(event.type)     // click
+}
+
+btn.addEventListener("click", () => {
+  console.log(event.type);    // click
+}, false);
+```
+
+### DOM 事件对象 event
+
+在事件处理函数的内部，this 对象始终等于 currentTarget (因为 this 是指向调用的对象的)。
+
+target 是事件触发的实际目标。（事件冒泡阶段可能出现 target 和 currentTarget 不相等的情况。
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <div id="div"> Click me</div>
+</body>
+<script>
+  var div = document.querySelector('#div');
+  div.addEventListener('click', function(e){
+    console.log('div click', e.currentTarget === this);    // true 
+    console.log('div click', e.target === this);           // true
+  })
+
+  var body = document.querySelector('body');
+  body.addEventListener('click', function(e){
+    console.log('body click', e.currentTarget === this);   // true
+    console.log('body click', e.target === this);          // false
+  })
+</script>
+</html>
+```
+
+- preventDefault()
+
+preventDefault() 方法用于阻止事件的默认行为（比如，a 标签有跳转到 href 链接的默认行为，使用 preventDefault() 可以阻止这种导航行为）
+
+preventDefault()阻止的必需是可 cancelable 的元素 **
+
+```js
+const link = document.getElementById("myLink");
+
+link.onclick = function(event){
+  event.preventDefault();
+}
+```
+
+- stopPropagation()
+
+stopPropagation() 方法用于立即阻止事件流在 DOM 中的传播，取消后续的事件捕获或冒泡。比如
+
+```js
+var div = document.querySelector('#div');
+
+div.addEventListener("click", (e) => {
+  console.log("clicked");
+  e.stopPropagation()
+}, false);
+
+document.body.addEventListener("click", () => {
+  console.log("body clicked");
+}, false);
+
+// clicked 
+```
+
+如果不调用 stopPropagation() 那么点击 div 会有两个 log 记录。如果加上的话，click 事件就不会传播到 body 上，只会有一个 log 记录（ clicked ）。
+
+### IE 事件对象
+
+IE 就是这么的与众不同（手动危笑）IE 事件对象是根据使用的事件处理程序不同而不同。
+
+- 使用 DOM0 事件处理程序，event 对象是全局对象 window 的一个属性
+
+- 使用 attachEvent() / HTML 属性方法处理事件处理程序，event 对象会作为唯一的参数传给处理函数（event 仍然是 window 对象的属性，只是方便将其作为参数参入）
+
+```js
+var div = document.querySelector('#div');
+
+div.onclick = function(){
+  let event = window.event;
+  console.log(evennt.type);     // click
+}
+
+div.attachEvent('onclick', function(event){
+  console.log(event.type);      // click
+})
+```
+
+## 事件循环（EventLoop）
+
+### 1. 什么是事件循环？
 
 所有的语言都拥有并发模型的概念，也就是说多个任务如何同时执行，大部分语言支持多线程执行，JS拥有所有语言中最简单的并发模型——JS使用单线程的"**事件循环(Event Loop)**"来处理多个任务的执行
 
@@ -29,7 +291,7 @@ while(获取任务()){
 |性能	| CPU性能很高，适合计算密集型任务	| 单一线程，无法发挥CPU的极限性能（可通过webWorker补充），不过前端应用本就不是计算密集型的|
 |阻塞	|不会阻塞，大型任务可以单开线程处理	 | 其实也不会阻塞，因为JS中的IO任务都是异步的（文件、网络），虽然大型计算任务依然会阻塞UI线程，但这种情况对前端其实不多|
 
-### 任务队列的概念
+#### 任务队列的概念
 
 理解了事件循环的概念，我们来继续看看任务队列，所谓**任务队列，其实就是保存待处理任务的一个数组**
 
@@ -67,7 +329,7 @@ cccc
 
 - 第5步：执行定时器任务，也就是console.log('cccc')
 
-## 2. 什么是宏任务和微任务？
+### 2. 什么是宏任务和微任务？
 
 其实js里任务队列不只有一条，而是有两条，而且有一条还是SVIP年费白金队列
 
@@ -101,7 +363,7 @@ while(获取任务()){
 
 所以，微任务其实比普通任务的优先级更高，因为在一个任务结束后，事件循环会找到并执行全部微任务，然后再继续查找其他任务，但这时候我们会有两个问题：
 
-### 哪些操作属于宏任务？哪些属于微任务？
+#### 哪些操作属于宏任务？哪些属于微任务？
 
 最早的js只有宏任务，而微任务是后来才加的
 
@@ -143,9 +405,9 @@ bbb
 
 > 按照官方的设想，任务之间是不平等的，有些任务对用户体验影响大，就应该优先执行，而有些任务属于背景任务（比如定时器），晚点执行没有什么问题，所以设计了这种优先级队列的方式
 
-## 拓展
+### 拓展
 
-### 1. 定时器为什么总是不准？
+#### 1. 定时器为什么总是不准？
 
 大家一定注意过一个事情，那就是JS中的定时器经常不准（其实所有语言都这样），这个问题也跟上面的任务队列有关
 
@@ -157,7 +419,7 @@ bbb
 
 所以结论就是，因为有其他任务在排队，定时器永远不可能完全准时
 
-### 2. async的坑
+#### 2. async的坑
 
 上面我们说到Promise也是微任务，而且async就是promise的一种语法包装（所谓语法糖），那async是不是一定是按照微任务的方式执行呢？"不全是"
 
@@ -264,7 +526,7 @@ console.log('bbb');
 
 - 第8步、执行剩下的普通任务队列，这时t1和t2才会出来
 
-### 3. dom操作属于宏任务还是微任务
+#### 3. dom操作属于宏任务还是微任务
 
 ```js
  console.log(1);
@@ -276,7 +538,7 @@ console.log('bbb');
 
 dom操作它既不是宏任务也不是微任务,它应该归于同步执行的范畴.
 
-### 4. requestAnimationFrame属于宏任务还是微任务
+#### 4. requestAnimationFrame属于宏任务还是微任务
 
 ```js
 setTimeout(() => {
@@ -298,7 +560,7 @@ new Promise(resolve => {
 
 但实际上 requestAnimationFrame 它既不能算宏任务,也并非是微任务.它的执行时机是在当前宏任务范围内,执行完同步代码和微任务队列后再执行.它仍然属于宏任务范围内,但是是在微任务队列执行完毕后才执行.
 
-### Promise的运行机制
+#### Promise的运行机制
 
 **包裹函数是同步代码**
 
@@ -313,9 +575,7 @@ new Promise(resolve => {
 
 new Promise里面的包裹的函数,也就是输出1的那段代码是同步执行的.而then包裹的函数才会被加载到微任务队列中等待执行.
 
-
-
-## 总结：
+### 总结：
 
 - 事件循环：JS采用单线程的事件循环方式管理异步任务，优点是简化编程模型，缺点是无法发挥CPU的全部性能（但对前端其实没影响）
 
