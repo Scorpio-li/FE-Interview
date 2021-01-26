@@ -2,7 +2,7 @@
  * @Author: Li Zhiliang
  * @Date: 2020-11-25 15:42:00
  * @LastEditors: Li Zhiliang
- * @LastEditTime: 2020-11-25 15:42:02
+ * @LastEditTime: 2021-01-25 16:53:26
  * @FilePath: /FE-Interview.git/project/webpack.md
 -->
 # Webpack 
@@ -36,8 +36,29 @@ babel的转译过程分为三个阶段：parsing、transforming、generating，�
 4. 用 babel-generator 通过 AST 树生成 ES5 代码
 
 
-## 1. webpack中的loader和plugin有什么区别
+## 3. webpack中的loader和plugin有什么区别
 
 - loader它是一个转换器，只专注于转换文件这一个领域，完成压缩、打包、语言编译，**它仅仅是为了打包**。并且运行在打包之前。
 
 - 而plugin是一个扩展器，它丰富了webpack本身，为其进行一些其它功能的扩展。**它不局限于打包，资源的加载，还有其它的功能。**所以它是在整个编译周期都起作用。
+
+## 4. webpack性能优化
+
+- treeShaking
+
+- 动态引入polyfill
+
+- 压缩
+
+- CDN
+
+- 提取公共代码库(SplitChunksPlugin)
+
+- sourceMap
+
+- preloading & prefetch
+
+- 持久化缓存（保持hash值的唯一性，打包后的资源生成一个独一无二的hash值）
+
+- 打包分析工具（webpack-bundle-analyzer）
+
