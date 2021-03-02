@@ -2,7 +2,7 @@
  * @Author: Li Zhiliang
  * @Date: 2021-01-11 16:58:17
  * @LastEditors: Li Zhiliang
- * @LastEditTime: 2021-01-11 17:44:18
+ * @LastEditTime: 2021-03-01 14:54:10
  * @FilePath: /FE-Interview.git/javascript/event.md
 -->
 # 浏览器的事件机制
@@ -10,6 +10,14 @@
 ## 事件流
 
 JS 与 HTML 的交互是用事件实现的。事件流描述了页面接收事件的顺序。
+
+"DOM2级事件"规定的事件流包括三个阶段：
+
+- 事件捕获阶段
+
+- 处于目标阶段
+
+- 事件冒泡阶段。 
 
 ### 事件冒泡
 
@@ -68,9 +76,65 @@ document click
 
 ![事件捕获](https://cdn.jsdelivr.net/gh/Scorpio-li/picture/interview/img/event-capture)
 
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>事件冒泡</title>
+</head>
+<body>
+    <div>
+        <p id="parEle">我是父元素    <span id="sonEle">我是子元素</span></p>
+    </div>
+</body>
+</html>
+<script type="text/javascript">
+var sonEle = document.getElementById('sonEle');
+var parEle = document.getElementById('parEle');
+
+parEle.addEventListener('click', function () {
+    alert('父级 冒泡');
+}, false);
+parEle.addEventListener('click', function () {
+    alert('父级 捕获');
+}, true);
+
+sonEle.addEventListener('click', function () {
+    alert('子级冒泡');
+}, false);
+sonEle.addEventListener('click', function () {
+    alert('子级捕获');
+}, true);
+
+</script>
+```
+
+当容器元素及嵌套元素，即在捕获阶段又在冒泡阶段调用事件处理程序时：事件按DOM事件流的顺序执行事件处理程序：
+
+- 父级捕获
+
+- 子级冒泡
+
+- 子级捕获
+
+- 父级冒泡
+
+且当事件处于目标阶段时，事件调用顺序决定于绑定事件的书写顺序，按上面的例子为，先调用冒泡阶段的事件处理程序，再调用捕获阶段的事件处理程序。依次alert出“子集冒泡”，“子集捕获”。
+
+### IE兼容
+
+- attchEvent('on' + type, handler)
+
+- detachEvent('on' + type, handler)
+
 ## 事件处理程序
 
 为了响应用户或者浏览器执行的某种动作（ click 、 load 、 mouseover ... ）而调用的 on 开头的函数被称为事件处理程序（事件监听器）。
+
+### 事件是如何实现的？
+
+基于发布订阅模式，就是在浏览器加载的时候会读取事件相关的代码，但是只有实际等到具体的事件触发的时候才会执行。
 
 ### HTML 事件处理程序
 
