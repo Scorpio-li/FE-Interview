@@ -34,6 +34,7 @@
     * [Question](vue/question.md)
     * [Knowledge](vue/knowledge.md)
     * [双向绑定原理及实现]()
+    * [Vue性能优化](vue/optimization.md)
 
 * [React InterView](react/README.md)
     * [Question](react/question.md)

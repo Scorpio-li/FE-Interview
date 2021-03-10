@@ -540,17 +540,23 @@ keep-alive是Vue.js的一个内置组件。<keep-alive> 包裹动态组件时，
 
 ## 15. vuex
 
+Vuex 是一个专为 Vue.js 应用程序开发的状态管理模式。每一个 Vuex 应用的核心就是 store（仓库）。“store” 基本上就是一个容器，它包含着你的应用中大部分的状态 ( state )。
+
+（1）Vuex 的状态存储是响应式的。当 Vue 组件从 store 中读取状态的时候，若 store 中的状态发生变化，那么相应的组件也会相应地得到高效更新。
+
+（2）改变 store 中的状态的唯一途径就是显式地提交 (commit) mutation。这样使得我们可以方便地跟踪每一个状态的变化。
+
 ### 15.1 vuex核心：
 
-- state：存储store的各种状态
+- state：存储store的各种状态，定义了应用状态的数据结构，可以在这里设置默认的初始状态。
 
-- mutation： 改变store的状态只能通过mutation方法
+- mutation： 改变store的状态只能通过mutation方法。是唯一更改 store 中状态的方法，且必须是同步函数。
 
-- action： 异步操作方法
+- action： 异步操作方法。用于提交 mutation，而不是直接变更状态，可以包含任意异步操作。
 
-- module： 模块化
+- module： 模块化。允许将单一的 Store 拆分为多个 store 且同时保存在单一的状态树中。
 
-- getter： 相当于计算属性，过滤出来一些值
+- getter： 相当于计算属性，过滤出来一些值。允许组件从 Store 中获取数据，mapGetters 辅助函数仅仅是将 store 中的 getter 映射到局部计算属性。
 
 ### 15.2 vuex使用
 
@@ -593,7 +599,17 @@ this.$store.getters.getlists
 
 
 
-##
-##
+## 17. $nextTick 是什么？
+
+vue实现响应式并不是数据发生变化后dom立即变化，而是按照一定的策略来进行dom更新。
+
+nextTick 是在下次 DOM 更新循环结束之后执行延迟回调，在修改数据之后使用nextTick，则可以在回调中获取更新后的 DOM
+
+## 18. SSR是什么？
+
+SSR也就是服务端渲染，**也就是将Vue在客户端把标签渲染成HTML的工作放在服务端完成，然后再把html直接返回给客户端。**
+
+SSR有着更好的SEO、并且首屏加载速度更快等优点。不过它也有一些缺点，比如我们的开发条件会受到限制，服务器端渲染只支持**beforeCreate**和**created**两个钩子，当我们需要一些外部扩展库时需要特殊处理，服务端渲染应用程序也需要处于Node.js的运行环境。还有就是服务器会有更大的负载需求。
+
 ##
 ##
