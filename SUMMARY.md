@@ -29,6 +29,7 @@
     * [手写代码逻辑](javascript/handleWrittenCode.md)
     * [虚拟列表优化](javascript/virtualList.md)
     * [函数式编程]()
+    * [笔试题](writtenQues.md)
 
 * [Vue InterView](vue/README.md)
     * [Question](vue/question.md)
